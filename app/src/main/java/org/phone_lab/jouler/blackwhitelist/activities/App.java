@@ -53,7 +53,6 @@ public class App implements Comparable<App> {
     public boolean isSelected() {
         MainActivity mainActivity = (MainActivity) appListFragment.getActivity();
         if (mainActivity.mService != null) {
-            Log.d(Utils.TAG, "Serive in isSelected: " + mainActivity.mService.toString());
             return mainActivity.mService.isSelected(this);
         }
         return false;
@@ -64,7 +63,6 @@ public class App implements Comparable<App> {
         boolean selectedA = this.isSelected();
         boolean selectedB = app.isSelected();
         if (selectedA ^ selectedB) {
-            Log.d(Utils.TAG, this.appName + ", " + app.getAppName());
             return selectedB ? 1 : -1;
         } else {
             return this.appName.compareTo(app.appName);

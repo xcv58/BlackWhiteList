@@ -135,20 +135,13 @@ public class AppListFragment extends ListFragment {
         getAppList(appList);
         List<App> list = new ArrayList<App>();
         for (App app : appList) {
-            Log.d(Utils.TAG, "app name: " + app.getAppName());
-            Log.d(Utils.TAG, "target: " + target);
-            if (service.isTargetApp(app.getAppName(), target)) {
+            if (service.isTargetApp(app.getPackageName(), target)) {
                 list.add(app);
             }
         }
         appList.clear();
         appList.addAll(list);
-        Log.d(Utils.TAG, "APPLIST size: " + appList.size());
         Collections.sort(appList);
-        for (App app : appList) {
-            Log.d(Utils.TAG, "App List: " + app.getAppName() + ", " + ((MainActivity)getActivity()).mService.toString());
-        }
-        Log.d(Utils.TAG, "APPLIST SORT!");
         appAdapter.notifyDataSetChanged();
         Log.d(Utils.TAG, "setTarget " + target);
     }

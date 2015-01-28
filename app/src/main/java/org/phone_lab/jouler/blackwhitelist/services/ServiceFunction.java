@@ -12,6 +12,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Created by xcv58 on 1/27/15.
@@ -70,11 +71,12 @@ public class ServiceFunction {
 
     public boolean isTargetApp(String packageName, String target) {
         this.initListMap();
-        String value = this.getList(packageName);
+        String value = this.getListName(packageName);
+        Log.d(Utils.TAG, "PackageName: " + packageName + "; value: " + value + "; target: " + target);
         return value.equals(target);
     }
 
-    private String getList(String packageName) {
+    private String getListName(String packageName) {
         String value = listMap.get(packageName);
         if (value == null) {
             value = DEFAULT_LIST;
@@ -127,24 +129,43 @@ public class ServiceFunction {
     public boolean isSelected(App app) {
         String packageName = app.getPackageName();
         HashSet<String> selectedSet = this.getSelectSet();
-        Log.d(Utils.TAG, "Set size: " + selectedSet.size());
         return selectedSet.contains(packageName);
     }
 
     public HashSet<String> getSelectSet() {
         this.initTargetMap();
         HashSet<String> set = this.targetSetMap.get(this.target);
-        Log.d(Utils.TAG, "Get targetSet for " + this.target);
         if (set == null) {
-            Log.d(Utils.TAG, "subset is null, create new one");
             set = new HashSet<String>();
             targetSetMap.put(this.target, set);
         }
-        Log.d(Utils.TAG, "set size is: " + set.size());
         return set;
+    }
+
+    public void clearSelectSet() {
+        this.initTargetMap();
+        HashSet<String> set = this.targetSetMap.get(this.target);
+        if (set != null) {
+            set.clear();
+        }
     }
 
     public void setTarget(String target) {
         this.target = target;
+    }
+
+    public String getTarget() {
+        return this.target;
+    }
+
+    public void moveTo(String target) {
+        this.initListMap();
+        Set<String> set = this.getSelectSet();
+        for (String packageName : set) {
+            Log.d(Utils.TAG, "Move to " + packageName + ", " + target);
+            listMap.put(packageName, target);
+        }
+        Log.d(Utils.TAG, "ListMap: " + listMap.toString());
+        this.clearSelectSet();
     }
 }

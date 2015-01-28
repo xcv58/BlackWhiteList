@@ -24,6 +24,11 @@ public class BlackWhiteListService extends Service {
         serviceFunction.setTarget(target);
     }
 
+    public String getTarget() {
+        initServiceFunction();
+        return serviceFunction.getTarget();
+    }
+
     public boolean isSelected(App app) {
         initServiceFunction();
         return serviceFunction.isSelected(app);
@@ -48,6 +53,11 @@ public class BlackWhiteListService extends Service {
     public void select(App app) {
         initServiceFunction();
         serviceFunction.select(app);
+    }
+
+    public void moveTo(String target) {
+        initServiceFunction();
+        serviceFunction.moveTo(target);
     }
 
     public void flush() {

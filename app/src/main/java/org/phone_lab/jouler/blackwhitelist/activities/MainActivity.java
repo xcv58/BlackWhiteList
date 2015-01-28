@@ -18,6 +18,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.Toast;
 
 import org.phone_lab.jouler.blackwhitelist.R;
@@ -32,20 +33,25 @@ public class MainActivity extends Activity {
     protected IJoulerBaseService iJoulerBaseService;
     protected BlackWhiteListService mService;
     private ListTabListener listTabListener;
+    private AppListFragment appListFragment;
+
+    protected String leftTarget;
+    protected String rightTarget;
 
     private class ListTabListener implements ActionBar.TabListener {
         @Override
         public void onTabSelected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
             Log.d(Utils.TAG, "onTabSelected " + tab.getText());
-            AppListFragment appListFragment = (AppListFragment) getFragmentManager().findFragmentById(R.id.client_list);
             String target = tab.getText().toString();
+
+            setButtons(target);
 
             if (mService == null) {
                 Log.d(Utils.TAG, "mService is NULL");
             } else {
                 mService.setTarget(target);
+                initAppListFragment();
                 appListFragment.setTarget(mService, target);
-                Log.d(Utils.TAG, "mService is " + iJoulerBaseService.toString());
             }
         }
 
@@ -57,7 +63,7 @@ public class MainActivity extends Activity {
         @Override
         public void onTabReselected(ActionBar.Tab tab, FragmentTransaction fragmentTransaction) {
             Log.d(Utils.TAG, "onTabReSelected " + tab.getText());
-            AppListFragment appListFragment = (AppListFragment) getFragmentManager().findFragmentById(R.id.client_list);
+            initAppListFragment();
         }
     }
 
@@ -90,7 +96,7 @@ public class MainActivity extends Activity {
             Log.d(Utils.TAG, "Get mService");
             BlackWhiteListService.LocalBinder binder = (BlackWhiteListService.LocalBinder) service;
             mService = binder.getService();
-            AppListFragment appListFragment = (AppListFragment) getFragmentManager().findFragmentById(R.id.client_list);
+            initAppListFragment();
             Collections.sort(appListFragment.appList);
             appListFragment.appAdapter.notifyDataSetChanged();
         }
@@ -158,6 +164,45 @@ public class MainActivity extends Activity {
         startJoulerBase();
     }
 
+    public void moveButtonOnClick(View view) {
+        Button button = (Button) view;
+        int id = button.getId();
+
+        switch (id) {
+            case R.id.move_to_left_list:
+                Log.d(Utils.TAG, "Click move to left list button");
+                this.mService.moveTo(leftTarget);
+                break;
+            case R.id.move_to_right_list:
+                Log.d(Utils.TAG, "Click move to right list button");
+                this.mService.moveTo(rightTarget);
+                break;
+            default:
+                Log.d(Utils.TAG, "Click UNKNOWN button");
+        }
+        initAppListFragment();
+        appListFragment.setTarget(mService, mService.getTarget());
+    }
+
+    private void setButtons(String target) {
+        Button leftButton = (Button) findViewById(R.id.move_to_left_list);
+        Button rightButton = (Button) findViewById(R.id.move_to_right_list);
+        int index = 0;
+        int length = Utils.TABS_ARRAY.length;
+        for (; index < length; index++) {
+            if (Utils.TABS_ARRAY[index].equals(target)) {
+                break;
+            }
+        }
+        int leftIndex = ((index + length) - 1) % length;
+        int rightIndex = ((index + length) + 1) % length;
+        leftTarget = Utils.TABS_ARRAY[leftIndex];
+        rightTarget = Utils.TABS_ARRAY[rightIndex];
+        String prefix = getString(R.string.button_desc_prefix);
+        leftButton.setText(prefix + " " + leftTarget);
+        rightButton.setText(prefix + " " + rightTarget);
+    }
+
     public void test(View view) {
         try {
             Log.d(Utils.TAG, "Click test button");
@@ -210,7 +255,7 @@ public class MainActivity extends Activity {
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+            View rootView = inflater.inflate(R.layout.buttons_main, container, false);
             return rootView;
         }
     }
@@ -229,6 +274,11 @@ public class MainActivity extends Activity {
         }
     }
 
+    private void initAppListFragment() {
+        if (appListFragment == null) {
+            appListFragment = (AppListFragment) getFragmentManager().findFragmentById(R.id.client_list);
+        }
+    }
     private boolean isPackageExisted(String targetPackage) {
         PackageManager pm=getPackageManager();
         try {
