@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <ImageView
+        android:id="@+id/logo"
+        android:layout_width="128px"
+        android:layout_height="128px"
+        android:layout_marginLeft="8px"
+        android:layout_marginRight="16px"
+        android:layout_marginTop="8px"
+        android:layout_marginBottom="8px"
+        android:src="@drawable/ic_launcher" >
+    </ImageView>
+    <Button
+        android:text="Black"
+        android:focusable="false"
+        android:layout_alignParentEnd="true"
+        android:id="@+id/black_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+    <Button
+        android:text="White"
+        android:focusable="false"
+        android:layout_toLeftOf="@id/black_button"
+        android:id="@+id/white_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/name"
+        android:layout_toRightOf="@id/logo"
+        android:layout_toLeftOf="@id/white_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="App Name"
+        android:textSize="64px" >
+    </TextView>
+    <TextView
+        android:id="@+id/label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/logo"
+        android:layout_toLeftOf="@id/white_button"
+        android:layout_below="@id/name"
+        android:text="com.package.name"
+        android:textSize="32px" >
+    </TextView>
+</RelativeLayout>
