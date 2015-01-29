@@ -12,6 +12,7 @@ import org.phone_lab.jouler.blackwhitelist.activities.App;
 
 import java.io.FileDescriptor;
 import java.util.Random;
+import java.util.Set;
 
 /**
  * Created by xcv58 on 1/23/15.
@@ -63,6 +64,11 @@ public class BlackWhiteListService extends Service {
     public void flush() {
         initServiceFunction();
         serviceFunction.flush();
+    }
+
+    public Set<String> getSelectedApp() {
+        initServiceFunction();
+        return serviceFunction.getSelectSet();
     }
 
     private void initServiceFunction() {

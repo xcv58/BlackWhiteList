@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.drm.DrmStore;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -27,11 +28,16 @@ import org.phone_lab.jouler.blackwhitelist.utils.Utils;
 import org.phone_lab.jouler.joulerbase.IJoulerBaseService;
 
 import java.util.Collections;
+import java.util.FormatFlagsConversionMismatchException;
+import java.util.List;
+import java.util.Set;
 
 
 public class MainActivity extends Activity {
     protected IJoulerBaseService iJoulerBaseService;
+    private boolean iJoulerBaseServiceBound;
     protected BlackWhiteListService mService;
+    protected boolean mBound;
     private ListTabListener listTabListener;
     private AppListFragment appListFragment;
 
@@ -74,8 +80,10 @@ public class MainActivity extends Activity {
             // this gets an instance of the IRemoteInterface, which we can use to call on the service
             iJoulerBaseService = IJoulerBaseService.Stub.asInterface(service);
             Log.d(Utils.TAG, "Bound from another app");
+            iJoulerBaseServiceBound = true;
             try {
                 if (!iJoulerBaseService.checkPermission()) {
+                    // ask to get permission;
                     startJoulerBase();
                 }
 //                iJoulerBaseService.test("From another app", "hh");
@@ -96,6 +104,7 @@ public class MainActivity extends Activity {
             Log.d(Utils.TAG, "Get mService");
             BlackWhiteListService.LocalBinder binder = (BlackWhiteListService.LocalBinder) service;
             mService = binder.getService();
+            mBound = true;
             initAppListFragment();
             Collections.sort(appListFragment.appList);
             appListFragment.appAdapter.notifyDataSetChanged();
@@ -103,6 +112,7 @@ public class MainActivity extends Activity {
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
+            mBound = false;
             mService = null;
         }
     };
@@ -120,6 +130,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         initTabs();
+        mBound = false;
 
 //        if (savedInstanceState == null) {
 //            getFragmentManager().beginTransaction()
@@ -132,14 +143,14 @@ public class MainActivity extends Activity {
     public void onResume() {
         super.onResume();
 
-        if (mService == null) {
+        if (!mBound) {
             Log.d(Utils.TAG, "bind mService");
             Intent blackWhiteListServiceIntent  = new Intent(this, BlackWhiteListService.class);
             bindService(blackWhiteListServiceIntent, mConnection, this.BIND_AUTO_CREATE);
             Log.d(Utils.TAG, "bind mService end");
         }
 
-        if (iJoulerBaseService == null) {
+        if (!iJoulerBaseServiceBound) {
             Log.d(Utils.TAG, "bind JoulerBaseService");
             Intent intent = new Intent(IJoulerBaseService.class.getName());
             bindService(intent, joulerBaseConnection, this.BIND_AUTO_CREATE);
@@ -150,12 +161,14 @@ public class MainActivity extends Activity {
     @Override
     public void onPause() {
         super.onPause();
-        if (mService != null) {
+        if (mBound) {
             mService.flush();
+            mBound = false;
             unbindService(mConnection);
         }
 
-        if (iJoulerBaseService != null) {
+        if (iJoulerBaseServiceBound) {
+            iJoulerBaseServiceBound = false;
             unbindService(joulerBaseConnection);
         }
     }
@@ -213,6 +226,40 @@ public class MainActivity extends Activity {
             iJoulerBaseService.test("Test", "from button");
         } catch (RemoteException e) {
             e.printStackTrace();
+        }
+    }
+
+    public void rateLimit(View view) {
+        Log.d(Utils.TAG, "add Rate limited");
+        Set<String> set = mService.getSelectedApp();
+        final Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        List<PackageInfo> list = getPackageManager().getInstalledPackages(PackageManager.GET_ACTIVITIES);
+        for (PackageInfo packageInfo : list) {
+            if (set.contains(packageInfo.packageName)) {
+                try {
+                    if (iJoulerBaseService.checkPermission()) {
+                        Log.d(Utils.TAG, "Has permission, do rate limit");
+                        switch (view.getId()) {
+                            case R.id.add_rate_limit:
+                                iJoulerBaseService.addRateLimitRule(packageInfo.applicationInfo.uid);
+                                break;
+                            case R.id.del_rate_limit:
+                                iJoulerBaseService.delRateLimitRule(packageInfo.applicationInfo.uid);
+                                break;
+                            default:
+                                break;
+                        }
+                    } else {
+                        Log.d(Utils.TAG, "Has no permission, do nothing");
+                    }
+                } catch (RemoteException e) {
+                    e.printStackTrace();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
         }
     }
 

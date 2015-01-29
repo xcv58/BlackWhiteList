@@ -11,6 +11,22 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
         <Button
+            android:id="@+id/add_rate_limit"
+            android:text="rateLimit"
+            android:onClick="rateLimit"
+            android:layout_alignParentStart="true"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content" />
+        <Button
+            android:id="@+id/del_rate_limit"
+            android:text="delRateLimit"
+            android:onClick="rateLimit"
+            android:layout_alignParentStart="true"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content" />
+        <Button
             android:id="@+id/move_to_left_list"
             android:text="@string/button_desc_prefix"
             android:onClick="moveButtonOnClick"

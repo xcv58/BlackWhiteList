@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="org.phone_lab.jouler.blackwhitelist"  >
+    <uses-permission android:name="android.permission.ACCESS_JOULER" />
     <uses-permission android:name="org.phone_lab.jouler.joulerbase" />
 
     <application

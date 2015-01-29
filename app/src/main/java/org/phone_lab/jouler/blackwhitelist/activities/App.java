@@ -13,7 +13,7 @@ import java.util.Comparator;
  * Created by xcv58 on 1/23/15.
  */
 public class App implements Comparable<App> {
-    private ResolveInfo resolveInfo;
+    protected ResolveInfo resolveInfo;
     private String appName;
     private String description;
     private String packageName;
