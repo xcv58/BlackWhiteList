@@ -1,5 +1,6 @@
 package org.phone_lab.jouler.blackwhitelist.activities;
 
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
@@ -19,6 +20,8 @@ public class App implements Comparable<App> {
     private String packageName;
     private Drawable icon;
     private AppListFragment appListFragment;
+    private PackageInfo packageInfo;
+    private int uid;
     private final static String NO_DESCRIPTION = "no description";
 
     public App(ResolveInfo resolveInfo, AppListFragment appListFragment) {
@@ -32,6 +35,13 @@ public class App implements Comparable<App> {
         CharSequence charSequence = resolveInfo.activityInfo.applicationInfo.loadDescription(pm);
         description = charSequence == null ? NO_DESCRIPTION : charSequence.toString();
         icon = resolveInfo.activityInfo.applicationInfo.loadIcon(pm);
+        try {
+            packageInfo = pm.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES);
+            uid = packageInfo.applicationInfo.uid;
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.d(Utils.TAG, "App inner Error: " + e.toString());
+            e.printStackTrace();
+        }
     }
 
     public String getAppName() {
@@ -40,6 +50,10 @@ public class App implements Comparable<App> {
 
     public String getPackageName() {
         return packageName;
+    }
+
+    public int getUid() {
+        return packageInfo == null ? Utils.NO_UID : uid;
     }
 
     public String getDescription() {

@@ -77,10 +77,10 @@ public class AppListFragment extends ListFragment {
     public void onListItemClick(android.widget.ListView l, android.view.View v, int position, long id) {
         super.onListItemClick(l, v, position, id);
         App app = appList.get(position);
-        Log.d(Utils.TAG, app.getAppName());
+        Log.d(Utils.TAG, "Select" + app.getAppName());
         MainActivity mainActivity = (MainActivity) getActivity();
-        if (mainActivity.mService != null) {
-            Log.d(Utils.TAG, mainActivity.mService.toString());
+        if (mainActivity.mBound) {
+            Log.d(Utils.TAG, "run service.select");
             mainActivity.mService.select(app);
         }
 

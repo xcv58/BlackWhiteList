@@ -86,7 +86,7 @@ public class MainActivity extends Activity {
                     // ask to get permission;
                     startJoulerBase();
                 }
-//                iJoulerBaseService.test("From another app", "hh");
+                iJoulerBaseService.test("From another app", "hh");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -123,6 +123,8 @@ public class MainActivity extends Activity {
         Log.d(Utils.TAG, "Client app onCreate");
 
         if (!isPackageExisted(getResources().getString(R.string.jouler_base_packagename))) {
+            // Not install Jouler Base, ask to install it.
+            Toast.makeText(this, "Not install Jouler Base. Please go to install it.", Toast.LENGTH_SHORT).show();
             Log.d(Utils.TAG, "Client return by no Jouler Base");
             return;
         }
@@ -232,24 +234,43 @@ public class MainActivity extends Activity {
     public void rateLimit(View view) {
         Log.d(Utils.TAG, "add Rate limited");
         Set<String> set = mService.getSelectedApp();
-        final Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
-        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-        List<PackageInfo> list = getPackageManager().getInstalledPackages(PackageManager.GET_ACTIVITIES);
-        for (PackageInfo packageInfo : list) {
-            if (set.contains(packageInfo.packageName)) {
+        for (App app : appListFragment.appList) {
+            if (set.contains(app.getPackageName())) {
                 try {
                     if (iJoulerBaseService.checkPermission()) {
                         Log.d(Utils.TAG, "Has permission, do rate limit");
+                        int uid = app.getUid();
+                        if (uid == Utils.NO_UID) {
+                            Log.d(Utils.TAG, app.getAppName() + " doesn't have valid uid");
+                            continue;
+                        }
+                        String statistics;
+                        statistics = iJoulerBaseService.getStatistics();
+                        Log.d(Utils.TAG, "statistics: " + statistics);
                         switch (view.getId()) {
                             case R.id.add_rate_limit:
-                                iJoulerBaseService.addRateLimitRule(packageInfo.applicationInfo.uid);
+                                Log.d(Utils.TAG, "add rate limit for: " + uid);
+                                iJoulerBaseService.addRateLimitRule(uid);
                                 break;
                             case R.id.del_rate_limit:
-                                iJoulerBaseService.delRateLimitRule(packageInfo.applicationInfo.uid);
+                                Log.d(Utils.TAG, "del rate limit for: " + uid);
+                                iJoulerBaseService.delRateLimitRule(uid);
+                                break;
+                            case R.id.reset_quota:
+                                uid = -1;
+                                Log.d(Utils.TAG, "reset quota: " + uid);
+                                iJoulerBaseService.addRateLimitRule(uid);
+                                break;
+                            case R.id.del_quota:
+                                uid = -1;
+                                Log.d(Utils.TAG, "del quota: " + uid);
+                                iJoulerBaseService.delRateLimitRule(uid);
                                 break;
                             default:
                                 break;
                         }
+                        statistics = iJoulerBaseService.getStatistics();
+                        Log.d(Utils.TAG, "statistics: " + statistics);
                     } else {
                         Log.d(Utils.TAG, "Has no permission, do nothing");
                     }
@@ -259,7 +280,6 @@ public class MainActivity extends Activity {
                     e.printStackTrace();
                 }
             }
-
         }
     }
 
