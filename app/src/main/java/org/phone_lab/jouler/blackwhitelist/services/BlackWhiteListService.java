@@ -4,15 +4,15 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
-import android.os.IInterface;
-import android.os.Parcel;
-import android.os.RemoteException;
+import android.util.Log;
 import android.widget.Toast;
 
+import org.phone_lab.jouler.blackwhitelist.R;
 import org.phone_lab.jouler.blackwhitelist.activities.App;
+import org.phone_lab.jouler.blackwhitelist.utils.Utils;
 
-import java.io.FileDescriptor;
-import java.util.Random;
+import android.support.v4.app.NotificationCompat;
+
 import java.util.Set;
 
 /**
@@ -20,6 +20,9 @@ import java.util.Set;
  */
 public class BlackWhiteListService extends Service {
     private ServiceFunction serviceFunction;
+
+    private NotificationCompat.Builder notificationBuilder;
+    private static final int NOTIFICATION_ID = 001;
 
     public void setTarget(String target) {
         initServiceFunction();
@@ -45,6 +48,41 @@ public class BlackWhiteListService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return new LocalBinder();
+    }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Log.d(Utils.TAG, Utils.TAG + " onCreate");
+        foreground();
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        super.onStartCommand(intent, flags, startId);
+        Log.d(Utils.TAG, Utils.TAG + " onStartCommand");
+        return START_REDELIVER_INTENT;
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d(Utils.TAG, "onDestroy");
+        stopForeground();
+    }
+
+    private void stopForeground() {
+        stopForeground(true);
+    }
+
+    private void foreground() {
+        notificationBuilder = new NotificationCompat.
+                Builder(getBaseContext())
+                .setContentTitle(Utils.TAG)
+                .setContentText(Utils.TAG)
+                .setSmallIcon(R.drawable.ic_launcher);
+        startForeground(NOTIFICATION_ID, notificationBuilder.build());
+        return;
     }
 
     public boolean isTargetApp(String packageName, String target) {

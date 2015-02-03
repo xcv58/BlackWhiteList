@@ -143,6 +143,8 @@ public class MainActivity extends Activity {
         initTabs();
         mBound = false;
 
+        Intent startServiceIntent = new Intent(this, BlackWhiteListService.class);
+        startService(startServiceIntent);
 //        if (savedInstanceState == null) {
 //            getFragmentManager().beginTransaction()
 //                    .add(R.id.container, new PlaceholderFragment())

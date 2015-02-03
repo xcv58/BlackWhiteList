@@ -19,6 +19,12 @@
             </intent-filter>
         </activity>
         <service android:name=".services.BlackWhiteListService" />
+        <receiver android:name=".receivers.StartStopReceiver">
+            <intent-filter android:priority="1">
+                <action android:name="org.phone_lab.jouler.blackwhitelist.START" />
+                <action android:name="org.phone_lab.jouler.blackwhitelist.STOP" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>
