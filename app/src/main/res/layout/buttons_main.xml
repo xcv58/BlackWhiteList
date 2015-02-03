@@ -10,15 +10,18 @@
         android:id="@+id/move_to_left_list"
         android:text="@string/button_desc_prefix"
         android:onClick="moveButtonOnClick"
+        android:textSize="17dp"
         android:layout_width="0dp"
         android:layout_weight="1"
-        android:layout_height="wrap_content" />
+        android:layout_height="fill_parent"
+        />
     <Button
         android:id="@+id/move_to_right_list"
         android:text="@string/button_desc_prefix"
         android:onClick="moveButtonOnClick"
+        android:textSize="17dp"
         android:layout_width="0dp"
         android:layout_weight="1"
-        android:layout_height="wrap_content"
+        android:layout_height="fill_parent"
         />
 </LinearLayout>
