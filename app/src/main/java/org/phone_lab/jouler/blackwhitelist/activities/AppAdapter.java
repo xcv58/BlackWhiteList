@@ -41,9 +41,6 @@ public class AppAdapter extends ArrayAdapter<App> {
         TextView textView_name = (TextView) rowView.findViewById(R.id.name);
         ImageView imageView = (ImageView) rowView.findViewById(R.id.logo);
 //        CheckBox checkBox = (CheckBox) rowView.findViewById(R.id.check);
-        Button blackButton = (Button) rowView.findViewById(R.id.black_button);
-        Button whiteButton = (Button) rowView.findViewById(R.id.white_button);
-
         // set one view
         App app =  list.get(position);
         textView_name.setText(app.getAppName());
@@ -62,12 +59,6 @@ public class AppAdapter extends ArrayAdapter<App> {
         Drawable icon = app.getIcon();
         imageView.setImageDrawable((icon != null) ? icon : context.getResources().getDrawable( R.drawable.ic_launcher ));
 
-        blackButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Log.d(Utils.TAG, "Black " + position);
-            }
-        });
         return rowView;
     }
 }

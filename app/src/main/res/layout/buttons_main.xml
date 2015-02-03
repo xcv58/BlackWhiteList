@@ -1,80 +1,24 @@
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    android:paddingTop="@dimen/activity_vertical_margin"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    tools:context=".MainActivity$PlaceholderFragment">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/linear_layout"
+    android:layout_height="match_parent"
+    android:layout_width="match_parent"
+    tools:context=".MainActivity$PlaceholderFragment"
+    >
 
-    <LinearLayout
-        android:id="@+id/linear_layout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-        <Button
-            android:id="@+id/add_rate_limit"
-            android:text="rateLimit"
-            android:onClick="rateLimit"
-            android:layout_alignParentStart="true"
-            android:layout_width="0dp"
-            android:layout_weight="4"
-            android:layout_height="wrap_content" />
-        <Button
-            android:id="@+id/del_rate_limit"
-            android:text="delRateLimit"
-            android:onClick="rateLimit"
-            android:layout_alignParentStart="true"
-            android:layout_width="0dp"
-            android:layout_weight="4"
-            android:layout_height="wrap_content" />
-        <Button
-            android:id="@+id/reset_quota"
-            android:text="reset quota"
-            android:onClick="rateLimit"
-            android:layout_alignParentStart="true"
-            android:layout_width="0dp"
-            android:layout_weight="4"
-            android:layout_height="wrap_content" />
-        <Button
-            android:id="@+id/del_quota"
-            android:text="del quoto"
-            android:onClick="rateLimit"
-            android:layout_alignParentStart="true"
-            android:layout_width="0dp"
-            android:layout_weight="4"
-            android:layout_height="wrap_content" />
-        <Button
-            android:id="@+id/move_to_left_list"
-            android:text="@string/button_desc_prefix"
-            android:onClick="moveButtonOnClick"
-            android:layout_alignParentStart="true"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content" />
-        <Button
-            android:id="@+id/move_to_right_list"
-            android:text="@string/button_desc_prefix"
-            android:onClick="moveButtonOnClick"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_toRightOf="@id/move_to_left_list"
-            />
-        </LinearLayout>
     <Button
-        android:id="@+id/b1"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/linear_layout"
-        android:text="open Jouler Base"
-        android:onClick="openJoulerBase"
-        />
+        android:id="@+id/move_to_left_list"
+        android:text="@string/button_desc_prefix"
+        android:onClick="moveButtonOnClick"
+        android:layout_width="0dp"
+        android:layout_weight="1"
+        android:layout_height="wrap_content" />
     <Button
-        android:layout_below="@id/b1"
-        android:layout_width="fill_parent"
+        android:id="@+id/move_to_right_list"
+        android:text="@string/button_desc_prefix"
+        android:onClick="moveButtonOnClick"
+        android:layout_width="0dp"
+        android:layout_weight="1"
         android:layout_height="wrap_content"
-        android:text="test AIDL function"
-        android:onClick="test"
         />
-
-</RelativeLayout>
+</LinearLayout>

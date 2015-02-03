@@ -1,25 +1,27 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout  xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/container"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-    <fragment
-        android:id="@+id/client_list"
-        android:name="org.phone_lab.jouler.blackwhitelist.activities.AppListFragment"
-        android:layout_width="fill_parent"
-        android:layout_weight="2"
-        android:layout_height="0dp" />
 
     <fragment
         android:id="@+id/buttons"
         android:name="org.phone_lab.jouler.blackwhitelist.activities.MainActivity$PlaceholderFragment"
         android:layout_width="fill_parent"
-        android:layout_weight="1"
-        android:layout_height="0dp" />
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        />
+    <fragment
+        android:id="@+id/client_list"
+        android:name="org.phone_lab.jouler.blackwhitelist.activities.AppListFragment"
+        android:layout_width="fill_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/buttons"
+        />
+
     <!--<fragment-->
         <!--android:id="@+id/desc"-->
         <!--android:name="org.phone_lab.jouler.joulerbase.activities.MainActivity$PlaceholderFragment"-->
         <!--android:layout_width="fill_parent"-->
         <!--android:layout_weight="1"-->
         <!--android:layout_height="0dp" />-->
-</LinearLayout>
+</RelativeLayout>
