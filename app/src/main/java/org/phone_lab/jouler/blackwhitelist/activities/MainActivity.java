@@ -7,6 +7,7 @@ import android.app.FragmentTransaction;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.drm.DrmStore;
@@ -34,6 +35,9 @@ import java.util.Set;
 
 
 public class MainActivity extends Activity {
+    private static final String DEFAULT_TAB_PREFERENCE = "DEFAULT_TAB_PREFERENCE ";
+    private static final String DEFAULT_TAB = "DEFAULT_TAB";
+
     protected IJoulerBaseService iJoulerBaseService;
     private boolean iJoulerBaseServiceBound;
     protected BlackWhiteListService mService;
@@ -43,6 +47,7 @@ public class MainActivity extends Activity {
 
     protected String leftTarget;
     protected String rightTarget;
+    protected String target;
 
     private class ListTabListener implements ActionBar.TabListener {
         @Override
@@ -106,6 +111,10 @@ public class MainActivity extends Activity {
             mService = binder.getService();
             mBound = true;
             initAppListFragment();
+            Log.d(Utils.TAG, "Set target for service and ListFragment: " + target);
+            mService.setTarget(target);
+            appListFragment.setTarget(mService, target);
+
             Collections.sort(appListFragment.appList);
             appListFragment.appAdapter.notifyDataSetChanged();
         }
@@ -163,6 +172,9 @@ public class MainActivity extends Activity {
     @Override
     public void onPause() {
         super.onPause();
+
+        saveTarget();
+
         if (mBound) {
             mService.flush();
             mBound = false;
@@ -173,6 +185,21 @@ public class MainActivity extends Activity {
             iJoulerBaseServiceBound = false;
             unbindService(joulerBaseConnection);
         }
+    }
+
+    private String getTarget() {
+        SharedPreferences targetPreferences = getSharedPreferences(DEFAULT_TAB_PREFERENCE, MODE_PRIVATE);
+        String target = targetPreferences.getString(DEFAULT_TAB, Utils.NORMALLIST_TAB);
+        Log.d(Utils.TAG, "get target: " + target);
+        return target;
+    }
+
+    private void saveTarget() {
+        Log.d(Utils.TAG, "save target: " + target);
+        SharedPreferences.Editor editor = getSharedPreferences(DEFAULT_TAB_PREFERENCE, 0).edit();
+        editor.putString(DEFAULT_TAB, target);
+        editor.commit();
+        return;
     }
 
     public void openJoulerBase(View view) {
@@ -211,6 +238,7 @@ public class MainActivity extends Activity {
         }
         int leftIndex = ((index + length) - 1) % length;
         int rightIndex = ((index + length) + 1) % length;
+        this.target = Utils.TABS_ARRAY[index];
         leftTarget = Utils.TABS_ARRAY[leftIndex];
         rightTarget = Utils.TABS_ARRAY[rightIndex];
         String prefix = getString(R.string.button_desc_prefix);
@@ -279,13 +307,13 @@ public class MainActivity extends Activity {
         ActionBar actionBar = getActionBar();
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
         this.listTabListener = new ListTabListener();
-
+        this.target = this.getTarget();
 
         for (String tabName : Utils.TABS_ARRAY) {
             ActionBar.Tab tab = actionBar.newTab();
             tab.setText(tabName);
             tab.setTabListener(listTabListener);
-            actionBar.addTab(tab, tabName.equals(Utils.NORMALLIST_TAB));
+            actionBar.addTab(tab, tabName.equals(this.target));
         }
     }
 
@@ -294,6 +322,7 @@ public class MainActivity extends Activity {
             appListFragment = (AppListFragment) getFragmentManager().findFragmentById(R.id.client_list);
         }
     }
+
     private boolean isPackageExisted(String targetPackage) {
         PackageManager pm=getPackageManager();
         try {

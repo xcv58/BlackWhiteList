@@ -1,6 +1,7 @@
 package org.phone_lab.jouler.blackwhitelist.services;
 
 import android.util.Log;
+import android.widget.Toast;
 
 import org.phone_lab.jouler.blackwhitelist.activities.App;
 import org.phone_lab.jouler.blackwhitelist.utils.Utils;
@@ -158,14 +159,16 @@ public class ServiceFunction {
         return this.target;
     }
 
-    public void moveTo(String target) {
+    public int moveTo(String target) {
         this.initListMap();
         Set<String> set = this.getSelectSet();
+        int result = set.size();
         for (String packageName : set) {
             Log.d(Utils.TAG, "Move to " + packageName + ", " + target);
             listMap.put(packageName, target);
         }
         Log.d(Utils.TAG, "ListMap: " + listMap.toString());
         this.clearSelectSet();
+        return result;
     }
 }
