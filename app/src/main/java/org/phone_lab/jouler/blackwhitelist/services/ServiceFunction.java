@@ -1,5 +1,14 @@
 package org.phone_lab.jouler.blackwhitelist.services;
 
+import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Bundle;
+import android.os.RemoteException;
+import android.provider.Settings;
+import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -27,12 +36,47 @@ public class ServiceFunction {
     private String target;
     private HashMap<String, HashSet<String>> targetSetMap;
 
+    private int globalPriority = 10;
+    private boolean isBrightnessSet;
+    private int previousBrightness;
+    private int previousBrightnessMode;
+
+    private BroadcastReceiver activityResumePauseReceiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Bundle bundle = intent.getExtras();
+            StringBuilder sb = new StringBuilder();
+
+            String packageName = bundle.getString(Utils.PACKAGE);
+            sb.append(Utils.PACKAGE);
+            sb.append(": ");
+            sb.append(packageName);
+            sb.append("; ");
+            int uid = bundle.getInt(Utils.USERID);
+            sb.append(Utils.USERID);
+            sb.append(": ");
+            sb.append(uid);
+            String action = intent.getAction();
+            if (action.equals(Intent.ACTION_RESUME_ACTIVITY)) {
+                if (isTargetApp(packageName, Utils.BLACKLIST_TAB)) {
+                    saveMode(uid, packageName);
+                }
+            } else if (action.equals(Intent.ACTION_PAUSE_ACTIVITY)) {
+                if (isTargetApp(packageName, Utils.BLACKLIST_TAB)) {
+                    leaveMode(uid, packageName);
+                }
+            }
+//            Log.d(TAG, intent.getAction() + "," + System.currentTimeMillis() + ", " + sb.toString() + ", Energy usage: " + getEnergy(uid));
+        }
+    };
 
     public ServiceFunction(BlackWhiteListService service) {
         this.service = service;
         this.target = DEFAULT_LIST;
+        isBrightnessSet = false;
+        this.registerBunchReceiver();
     }
-
 
     public HashMap<String, String> readListMap() {
 //        Log.d(TAG, "read map from file: " + listMapLocation);
@@ -170,5 +214,61 @@ public class ServiceFunction {
         Log.d(Utils.TAG, "ListMap: " + listMap.toString());
         this.clearSelectSet();
         return result;
+    }
+
+    private void registerBunchReceiver() {
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(Intent.ACTION_RESUME_ACTIVITY);
+        intentFilter.addAction(Intent.ACTION_PAUSE_ACTIVITY);
+        service.registerReceiver(activityResumePauseReceiver, intentFilter);
+
+//        IntentFilter batteryChangeIntentFilter = new IntentFilter();
+//        batteryChangeIntentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
+//        service.registerReceiver(onBatteryChange, batteryChangeIntentFilter);
+//
+//        IntentFilter screenOnOffIntentFilter = new IntentFilter();
+//        screenOnOffIntentFilter.addAction(Intent.ACTION_SCREEN_ON);
+//        screenOnOffIntentFilter.addAction(Intent.ACTION_SCREEN_OFF);
+//        service.registerReceiver(screenReceiver, screenOnOffIntentFilter);
+    }
+
+    private void unregisterBunchReceiver(BlackWhiteListService service) {
+        service.unregisterReceiver(activityResumePauseReceiver);
+//        service.unregisterReceiver(screenReceiver);
+//        service.unregisterReceiver(onBatteryChange);
+    }
+
+    private void saveMode(int uid, String packageName) {
+//        makeNotification(ENTER_SAVE_MODE, packagename);
+        Log.d(Utils.TAG, "Enable saveMode for: " + packageName);
+
+        try {
+            if (service.iJoulerBaseServiceBound) {
+                service.iJoulerBaseService.lowBrightness();
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+//        setBrightness();
+//        setPriority(uid, packagename);
+    }
+
+    private void leaveMode(int uid, String packageName) {
+//        if (metaData.isRateLimited()) {
+//            if (!metaData.alreadySetRateLimit(packagename)) {
+//                joulerPolicy.rateLimitForUid(uid);
+//                metaData.setRateLimit(packagename);
+//            }
+//        }
+        try {
+            if (service.iJoulerBaseServiceBound) {
+                service.iJoulerBaseService.resetBrightness();
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+//        if (metaData.isForegroundPriority(uid)) {
+//            joulerPolicy.resetPriority(uid, metaData.getGlobalPriority());
+//        }
     }
 }

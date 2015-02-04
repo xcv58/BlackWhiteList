@@ -1,7 +1,9 @@
 package org.phone_lab.jouler.blackwhitelist.services;
 
 import android.app.Service;
+import android.content.ComponentName;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Binder;
 import android.os.IBinder;
 import android.util.Log;
@@ -10,6 +12,7 @@ import android.widget.Toast;
 import org.phone_lab.jouler.blackwhitelist.R;
 import org.phone_lab.jouler.blackwhitelist.activities.App;
 import org.phone_lab.jouler.blackwhitelist.utils.Utils;
+import org.phone_lab.jouler.joulerbase.IJoulerBaseService;
 
 import android.support.v4.app.NotificationCompat;
 
@@ -20,9 +23,37 @@ import java.util.Set;
  */
 public class BlackWhiteListService extends Service {
     private ServiceFunction serviceFunction;
+    
+    protected boolean iJoulerBaseServiceBound;
+    protected IJoulerBaseService iJoulerBaseService;
 
     private NotificationCompat.Builder notificationBuilder;
     private static final int NOTIFICATION_ID = 001;
+
+    private ServiceConnection joulerBaseConnection = new ServiceConnection() {
+        // Called when the connection with the service is established
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            // Following the example above for an AIDL interface,
+            // this gets an instance of the IRemoteInterface, which we can use to call on the service
+            iJoulerBaseService = IJoulerBaseService.Stub.asInterface(service);
+            iJoulerBaseServiceBound = true;
+            try {
+                if (!iJoulerBaseService.checkPermission()) {
+                    // ask to get permission;
+//                    startJoulerBase();
+//                } else {
+//                    iJoulerBaseService.test("Demo", "app");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Called when the connection with the service disconnects unexpectedly
+        public void onServiceDisconnected(ComponentName className) {
+            iJoulerBaseService = null;
+        }
+    };
 
     public void setTarget(String target) {
         initServiceFunction();
@@ -68,6 +99,10 @@ public class BlackWhiteListService extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.d(Utils.TAG, "onDestroy");
+        // should reset everything.
+        if (iJoulerBaseServiceBound) {
+            unbindService(joulerBaseConnection);
+        }
         stopForeground();
     }
 
@@ -118,6 +153,10 @@ public class BlackWhiteListService extends Service {
     private void initServiceFunction() {
         if (serviceFunction == null) {
             serviceFunction = new ServiceFunction(this);
+        }
+        if (!iJoulerBaseServiceBound) {
+            Intent intent = new Intent(IJoulerBaseService.class.getName());
+            bindService(intent, joulerBaseConnection, BIND_AUTO_CREATE);
         }
     }
 }

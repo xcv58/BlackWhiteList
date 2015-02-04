@@ -11,6 +11,8 @@ public class Utils {
     public static final String[] TABS_ARRAY = {BLACKLIST_TAB, NORMALLIST_TAB, WHITELIST_TAB};
     public static final int NO_UID = -1;
 
+    public static final String PACKAGE = "Package";
+    public static final String USERID = "UserId";
 
     public static final String START_ACTION = "org.phone_lab.jouler.blackwhitelist.START";
     public static final String STOP_ACTION = "org.phone_lab.jouler.blackwhitelist.STOP";
