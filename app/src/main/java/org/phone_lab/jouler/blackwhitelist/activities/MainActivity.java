@@ -111,12 +111,14 @@ public class MainActivity extends Activity {
             mService = binder.getService();
             mBound = true;
             initAppListFragment();
+            target = getTarget();
             Log.d(Utils.TAG, "Set target for service and ListFragment: " + target);
+            Log.d(Utils.TAG, "mService is: " + mService.toString());
             mService.setTarget(target);
-            appListFragment.setTarget(mService, target);
+//            appListFragment.setTarget(mService, target);
 
-            Collections.sort(appListFragment.appList);
-            appListFragment.appAdapter.notifyDataSetChanged();
+//            Collections.sort(appListFragment.appList);
+//            appListFragment.appAdapter.notifyDataSetChanged();
         }
 
         @Override
@@ -137,6 +139,7 @@ public class MainActivity extends Activity {
             Log.d(Utils.TAG, "Client return by no Jouler Base");
             return;
         }
+        // TODO: double check permission
 
         setContentView(R.layout.activity_main);
 
@@ -145,6 +148,7 @@ public class MainActivity extends Activity {
 
         Intent startServiceIntent = new Intent(this, BlackWhiteListService.class);
         startService(startServiceIntent);
+
 //        if (savedInstanceState == null) {
 //            getFragmentManager().beginTransaction()
 //                    .add(R.id.container, new PlaceholderFragment())

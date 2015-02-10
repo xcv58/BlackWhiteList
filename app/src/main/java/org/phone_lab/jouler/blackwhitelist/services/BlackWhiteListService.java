@@ -100,6 +100,8 @@ public class BlackWhiteListService extends Service {
         super.onDestroy();
         Log.d(Utils.TAG, "onDestroy");
         // should reset everything.
+        initServiceFunction();
+        serviceFunction.reset();
         if (iJoulerBaseServiceBound) {
             unbindService(joulerBaseConnection);
         }

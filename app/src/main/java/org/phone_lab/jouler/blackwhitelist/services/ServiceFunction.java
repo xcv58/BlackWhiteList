@@ -5,13 +5,17 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.os.BatteryManager;
 import android.os.Bundle;
+import android.os.DropBoxManager;
 import android.os.RemoteException;
 import android.provider.Settings;
 import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 import android.widget.Toast;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.phone_lab.jouler.blackwhitelist.activities.App;
 import org.phone_lab.jouler.blackwhitelist.utils.Utils;
 
@@ -22,6 +26,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -36,13 +42,15 @@ public class ServiceFunction {
     private String target;
     private HashMap<String, HashSet<String>> targetSetMap;
 
+    private HashSet<Integer> rateLimitPackageSet;
+    private HashMap<Integer, Integer> priorityChangedPackageMap;
+
     private int globalPriority = 10;
     private boolean isBrightnessSet;
-    private int previousBrightness;
-    private int previousBrightnessMode;
+
+    private int batteryLevel;
 
     private BroadcastReceiver activityResumePauseReceiver = new BroadcastReceiver() {
-
         @Override
         public void onReceive(Context context, Intent intent) {
             Bundle bundle = intent.getExtras();
@@ -67,7 +75,50 @@ public class ServiceFunction {
                     leaveMode(uid, packageName);
                 }
             }
-//            Log.d(TAG, intent.getAction() + "," + System.currentTimeMillis() + ", " + sb.toString() + ", Energy usage: " + getEnergy(uid));
+        }
+    };
+
+    BroadcastReceiver onBatteryChange = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+            int status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+            boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                    status == BatteryManager.BATTERY_STATUS_FULL;
+
+            if (!isLevelChanged(level)) {
+                return;
+            }
+            batteryLevelChanged();
+
+//            JSONObject detail = getJsonDetail();
+//            try {
+//                double totalInList = detail.getDouble(TOTAL_CONSUMPTION_IN_LIST);
+//                double totalNotInList = detail.getDouble(TOTAL_CONSUMPTION_NOT_IN_LIST);
+//                int numInList = detail.getInt(NUM_IN_LIST);
+//                int numNotINList = detail.getInt(NUM_NOT_IN_LIST);
+//                double meanInList = 0.0;
+//                double meanNotInList = 0.0;
+//                if (numInList != 0 && totalInList > 0.0) {
+//                    meanInList = totalInList / numInList;
+//                }
+//                if (numNotINList != 0 && totalNotInList > 0.0) {
+//                    meanNotInList = totalNotInList / numNotINList;
+//                }
+//                double ratio = meanInList / meanNotInList;
+////                makeNotification("Battery Level change", "Level: " + level + ", ratio: " + ratio);
+//                if (!isBlackList()) {
+//                    ratio = meanNotInList / meanInList;
+//                }
+//                if (ratio >= MAX_THRESHOLD) {
+//                    punish();
+//                }
+//                if (ratio <= MIN_THRESHOLD) {
+//                    forgive();
+//                }
+//            } catch (JSONException e) {
+//                e.printStackTrace();
+//            }
         }
     };
 
@@ -75,6 +126,9 @@ public class ServiceFunction {
         this.service = service;
         this.target = DEFAULT_LIST;
         isBrightnessSet = false;
+        batteryLevel = -1;
+        rateLimitPackageSet = new HashSet<Integer>();
+        priorityChangedPackageMap = new HashMap<Integer, Integer>();
         this.registerBunchReceiver();
     }
 
@@ -117,7 +171,7 @@ public class ServiceFunction {
     public boolean isTargetApp(String packageName, String target) {
         this.initListMap();
         String value = this.getListName(packageName);
-        Log.d(Utils.TAG, "PackageName: " + packageName + "; value: " + value + "; target: " + target);
+//        Log.d(Utils.TAG, "PackageName: " + packageName + "; value: " + value + "; target: " + target);
         return value.equals(target);
     }
 
@@ -211,8 +265,9 @@ public class ServiceFunction {
             Log.d(Utils.TAG, "Move to " + packageName + ", " + target);
             listMap.put(packageName, target);
         }
-        Log.d(Utils.TAG, "ListMap: " + listMap.toString());
+//        Log.d(Utils.TAG, "ListMap: " + listMap.toString());
         this.clearSelectSet();
+        batteryLevelChanged();
         return result;
     }
 
@@ -239,12 +294,26 @@ public class ServiceFunction {
     }
 
     private void saveMode(int uid, String packageName) {
-//        makeNotification(ENTER_SAVE_MODE, packagename);
         Log.d(Utils.TAG, "Enable saveMode for: " + packageName);
 
         try {
             if (service.iJoulerBaseServiceBound) {
-                service.iJoulerBaseService.lowBrightness();
+                if (!isBrightnessSet) {
+                    service.iJoulerBaseService.lowBrightness();
+                    isBrightnessSet = true;
+                }
+
+                if (rateLimitPackageSet.contains(uid)) {
+                    service.iJoulerBaseService.delRateLimitRule(uid);
+                }
+
+                Integer originalPriority = priorityChangedPackageMap.get(uid);
+                if (originalPriority != null) {
+                    // have already change the priority of package
+                    // so need put it back because it becomes foreground.
+                    service.iJoulerBaseService.resetPriority(uid, originalPriority);
+                    priorityChangedPackageMap.remove(uid);
+                }
             }
         } catch (RemoteException e) {
             e.printStackTrace();
@@ -253,22 +322,111 @@ public class ServiceFunction {
 //        setPriority(uid, packagename);
     }
 
-    private void leaveMode(int uid, String packageName) {
-//        if (metaData.isRateLimited()) {
-//            if (!metaData.alreadySetRateLimit(packagename)) {
-//                joulerPolicy.rateLimitForUid(uid);
-//                metaData.setRateLimit(packagename);
+    private boolean isLevelChanged(int newLevel) {
+        if (batteryLevel == -1) {
+            batteryLevel = newLevel;
+        }
+        if (newLevel == batteryLevel) {
+            return false;
+        }
+        batteryLevel = newLevel;
+        return true;
+    }
+
+    private void batteryLevelChanged() {
+        // do some computation to get threshold
+        // do punish or forgive based on the threshold
+        Log.d(Utils.TAG, "batteryLevelChanged");
+        if (!service.iJoulerBaseServiceBound) {
+            Log.d(Utils.TAG, "batteryLevelChanged no bound service");
+            return;
+        }
+        try {
+            String src = service.iJoulerBaseService.getStatistics();
+            JSONObject json = new JSONObject(src);
+            Iterator<String> e = json.keys();
+            while (e.hasNext()) {
+                String packageName = e.next();
+                String whichList = listMap.get(packageName);
+                if (whichList == null) {
+                    Log.d(Utils.TAG, packageName + " not in list.");
+                    continue;
+                }
+                Log.d(Utils.TAG, packageName + ":");
+                JSONObject uidStats = json.getJSONObject(packageName);
+//                Iterator<String> uidStatsE = uidStats.keys();
+//                json.put("FgEnergy", u.getFgEnergy());
+//                json.put("BgEnergy", u.getBgEnergy());
+                Object fgEnergy = uidStats.get(Utils.JSON_FgEnergy);
+                Log.d(Utils.TAG, "Package name: " + packageName + "; fgEnergy: " + fgEnergy);
+//                Double.parseDouble(uidStats.get(Utils.JSON_FgEnergy).toString());
+
+//                while (uidStatsE.hasNext()) {
+//                    String attribute = uidStatsE.next();
+//                    Log.d(Utils.TAG, "Package name: " + key + "; " + attribute + ": " + uidStats.get(attribute));
+//                }
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+//        initListMap();
+//        for (Map.Entry<String, String> entry : listMap.entrySet()) {
+//            String packageName = entry.getKey();
+//            String whichList = entry.getValue();
+//            if (whichList.equals(Utils.BLACKLIST_TAB)) {
+//                Log.d(Utils.TAG, packageName + " is in " + whichList);
+//            } else if (whichList.equals(Utils.NORMALLIST_TAB)) {
+//                Log.d(Utils.TAG, packageName + " is in " + whichList);
+//            } else if (whichList.equals(Utils.WHITELIST_TAB)) {
+//                Log.d(Utils.TAG, packageName + " is in " + whichList);
+//            } else {
+//                Log.d(Utils.TAG, "ERROR: " + packageName + " is in " + whichList + ", which doesn't exist!");
 //            }
 //        }
+    }
+
+    private void leaveMode(int uid, String packageName) {
         try {
             if (service.iJoulerBaseServiceBound) {
-                service.iJoulerBaseService.resetBrightness();
+                if (isBrightnessSet) {
+                    service.iJoulerBaseService.resetBrightness();
+                    isBrightnessSet = false;
+                }
+
+                if (rateLimitPackageSet.contains(uid)) {
+                    service.iJoulerBaseService.addRateLimitRule(uid);
+                }
+
+                Integer originalPriority = priorityChangedPackageMap.get(uid);
+                if (originalPriority == null) {
+                    // haven't touch this package
+                    service.iJoulerBaseService.getPriority(uid);
+                    priorityChangedPackageMap.put(uid, originalPriority);
+                    service.iJoulerBaseService.resetPriority(uid, globalPriority);
+                }
             }
         } catch (RemoteException e) {
             e.printStackTrace();
         }
-//        if (metaData.isForegroundPriority(uid)) {
-//            joulerPolicy.resetPriority(uid, metaData.getGlobalPriority());
-//        }
+    }
+
+    public void reset() {
+        // should reset everything.
+        try {
+            for (Integer uid : rateLimitPackageSet) {
+                service.iJoulerBaseService.delRateLimitRule(uid);
+            }
+            rateLimitPackageSet.clear();
+            for (Map.Entry<Integer, Integer> entry : priorityChangedPackageMap.entrySet()) {
+                int uid = entry.getKey();
+                int priority = entry.getValue();
+                service.iJoulerBaseService.resetPriority(uid, priority);
+            }
+            priorityChangedPackageMap.clear();
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
     }
 }
