@@ -31,6 +31,7 @@ import java.util.List;
 public class AppListFragment extends ListFragment {
     protected AppAdapter appAdapter;
     public List<App> appList;
+    public List<App> wholeAppList;
     private HashSet<String> duplicateSet;
     private ListView listView;
     private String target;
@@ -44,8 +45,8 @@ public class AppListFragment extends ListFragment {
         Log.d(Utils.TAG, "onCreateView");
         View rootView = inflater.inflate(R.layout.app_list, container, false);
         appList = new ArrayList<App>();
-        getAppList(appList);
-        Collections.sort(appList);
+        wholeAppList = new ArrayList<App>();
+        getAppList(wholeAppList);
 
         appAdapter = new AppAdapter(getActivity(), appList);
         setListAdapter(appAdapter);
@@ -132,9 +133,8 @@ public class AppListFragment extends ListFragment {
     }
 
     public void setTarget(BlackWhiteListService service, String target) {
-        getAppList(appList);
         List<App> list = new ArrayList<App>();
-        for (App app : appList) {
+        for (App app : wholeAppList) {
             if (service.isTargetApp(app.getPackageName(), target)) {
                 list.add(app);
             }

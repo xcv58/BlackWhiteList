@@ -158,10 +158,6 @@ public class MainActivity extends Activity {
             setContentView(R.layout.no_jouler_base_install);
         }
 
-        // TODO: double check permission
-        // TODO: popup window
-
-
 //        if (savedInstanceState == null) {
 //            getFragmentManager().beginTransaction()
 //                    .add(R.id.container, new PlaceholderFragment())
@@ -305,9 +301,6 @@ public class MainActivity extends Activity {
         AlertDialog dialog = builder.create();
         dialog.show();
         return;
-//        Intent LaunchIntent = getPackageManager().getLaunchIntentForPackage(getResources().getString(R.string.jouler_base_packagename));
-//        LaunchIntent.putExtra("SOURCE", getApplicationInfo().packageName);
-//        startActivity(LaunchIntent);
     }
 
     @Override
