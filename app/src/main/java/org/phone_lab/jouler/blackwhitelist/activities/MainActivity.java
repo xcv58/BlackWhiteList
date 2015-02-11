@@ -2,15 +2,18 @@ package org.phone_lab.jouler.blackwhitelist.activities;
 
 import android.app.Activity;
 import android.app.ActionBar;
+import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.content.ComponentName;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.drm.DrmStore;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
@@ -37,6 +40,9 @@ import java.util.Set;
 public class MainActivity extends Activity {
     private static final String DEFAULT_TAB_PREFERENCE = "DEFAULT_TAB_PREFERENCE ";
     private static final String DEFAULT_TAB = "DEFAULT_TAB";
+
+    private static boolean joulerBaseExist;
+    private static boolean permissionGranted;
 
     protected IJoulerBaseService iJoulerBaseService;
     private boolean iJoulerBaseServiceBound;
@@ -115,10 +121,10 @@ public class MainActivity extends Activity {
             Log.d(Utils.TAG, "Set target for service and ListFragment: " + target);
             Log.d(Utils.TAG, "mService is: " + mService.toString());
             mService.setTarget(target);
-//            appListFragment.setTarget(mService, target);
+            appListFragment.setTarget(mService, target);
 
-//            Collections.sort(appListFragment.appList);
-//            appListFragment.appAdapter.notifyDataSetChanged();
+            Collections.sort(appListFragment.appList);
+            appListFragment.appAdapter.notifyDataSetChanged();
         }
 
         @Override
@@ -133,21 +139,28 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         Log.d(Utils.TAG, "Client app onCreate");
 
-        if (!isPackageExisted(getResources().getString(R.string.jouler_base_packagename))) {
-            // Not install Jouler Base, ask to install it.
-            Toast.makeText(this, "Not install Jouler Base. Please go to install it.", Toast.LENGTH_SHORT).show();
-            Log.d(Utils.TAG, "Client return by no Jouler Base");
-            return;
+        joulerBaseExist = checkJoulerBaseExist();
+
+        if (joulerBaseExist) {
+            permissionGranted = checkJoulerBasePermission();
+            if (permissionGranted) {
+//                Toast.makeText(this, "Got permission", Toast.LENGTH_SHORT).show();
+                setContentView(R.layout.activity_main);
+                initTabs();
+                mBound = false;
+
+                Intent startServiceIntent = new Intent(this, BlackWhiteListService.class);
+                startService(startServiceIntent);
+            } else {
+                Toast.makeText(this, "No permission, please reinstall this app!", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            setContentView(R.layout.no_jouler_base_install);
         }
+
         // TODO: double check permission
+        // TODO: popup window
 
-        setContentView(R.layout.activity_main);
-
-        initTabs();
-        mBound = false;
-
-        Intent startServiceIntent = new Intent(this, BlackWhiteListService.class);
-        startService(startServiceIntent);
 
 //        if (savedInstanceState == null) {
 //            getFragmentManager().beginTransaction()
@@ -159,6 +172,8 @@ public class MainActivity extends Activity {
     @Override
     public void onResume() {
         super.onResume();
+        if (!joulerBaseExist) { return; }
+        if (!permissionGranted) { return; }
 
         if (!mBound) {
             Log.d(Utils.TAG, "bind mService");
@@ -178,6 +193,9 @@ public class MainActivity extends Activity {
     @Override
     public void onPause() {
         super.onPause();
+
+        if (!joulerBaseExist) { return; }
+        if (!permissionGranted) { return; }
 
         saveTarget();
 
@@ -266,9 +284,30 @@ public class MainActivity extends Activity {
     }
 
     public void startJoulerBase() {
-        Intent LaunchIntent = getPackageManager().getLaunchIntentForPackage(getResources().getString(R.string.jouler_base_packagename));
-        LaunchIntent.putExtra("SOURCE", getApplicationInfo().packageName);
-        startActivity(LaunchIntent);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.not_selected_in_jouler_base_title)
+                .setMessage(R.string.not_selected_in_jouler_base_content);
+        builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                Intent LaunchIntent = getPackageManager().getLaunchIntentForPackage(getResources().getString(R.string.jouler_base_packagename));
+                LaunchIntent.putExtra(getString(R.string.call_baseapp_extra_source_name), getApplicationInfo().packageName);
+                startActivity(LaunchIntent);
+            }
+        });
+        builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                finish();
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        return;
+//        Intent LaunchIntent = getPackageManager().getLaunchIntentForPackage(getResources().getString(R.string.jouler_base_packagename));
+//        LaunchIntent.putExtra("SOURCE", getApplicationInfo().packageName);
+//        startActivity(LaunchIntent);
     }
 
     @Override
@@ -337,5 +376,46 @@ public class MainActivity extends Activity {
             return false;
         }
         return true;
+    }
+
+    private boolean checkJoulerBaseExist() {
+        if (isPackageExisted(getResources().getString(R.string.jouler_base_packagename))) {
+            //Alread installed, skip
+            return true;
+        }
+        Toast.makeText(this, "Not install Jouler Base. Please go to install it.", Toast.LENGTH_SHORT).show();
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.no_jouler_base_app_title)
+                .setMessage(R.string.no_jouler_base_app_content);
+        builder.setPositiveButton(R.string.yes, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                Intent goToMarket = new Intent(Intent.ACTION_VIEW)
+                        .setData(Uri.parse("market://details?id=" + getString(R.string.jouler_base_packagename)));
+                startActivity(goToMarket);
+            }
+        });
+        builder.setNegativeButton(R.string.no, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                finish();
+            }
+        });
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        return false;
+    }
+
+    private boolean checkJoulerBasePermission() {
+        PackageManager packageManager = getPackageManager();
+        String permissionName = getString(R.string.permission_name);
+        if (PackageManager.PERMISSION_GRANTED == packageManager.checkPermission(permissionName, getPackageName())) {
+            // got permission skip
+            return true;
+        }
+        // Please reinstall this app.
+        return false;
+//        finish();
     }
 }
