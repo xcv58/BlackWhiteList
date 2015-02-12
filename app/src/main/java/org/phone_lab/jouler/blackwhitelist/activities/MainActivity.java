@@ -12,7 +12,6 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.drm.DrmStore;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -32,9 +31,6 @@ import org.phone_lab.jouler.blackwhitelist.utils.Utils;
 import org.phone_lab.jouler.joulerbase.IJoulerBaseService;
 
 import java.util.Collections;
-import java.util.FormatFlagsConversionMismatchException;
-import java.util.List;
-import java.util.Set;
 
 
 public class MainActivity extends Activity {
@@ -318,8 +314,16 @@ public class MainActivity extends Activity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        switch (id) {
+            case R.id.menu_settings:
+                Toast.makeText(this, "Setting clicked", Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.menu_help:
+                Toast.makeText(this, "Help clicked", Toast.LENGTH_SHORT).show();
+                break;
+            default:
+                Toast.makeText(this, "UNKNOWN Options Item clicked", Toast.LENGTH_SHORT).show();
+                break;
         }
 
         return super.onOptionsItemSelected(item);
