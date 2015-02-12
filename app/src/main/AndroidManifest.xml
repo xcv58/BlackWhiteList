@@ -3,6 +3,8 @@
     package="org.phone_lab.jouler.blackwhitelist"  >
     <uses-permission android:name="org.phone_lab.jouler.joulerbase" />
 
+    <permission android:name="org.phone_lab.jouler.joulerbase" android:label="Jouler Base" android:protectionLevel="dangerous"/>
+
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
