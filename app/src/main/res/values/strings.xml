@@ -8,6 +8,7 @@
     <string name="action_help">Help!</string>
     <string name="button_desc_prefix">Move to</string>
 
+    <string name="exit">Exit</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
     <string name="not_selected_in_jouler_base_title">Not Selected Jouler Base</string>

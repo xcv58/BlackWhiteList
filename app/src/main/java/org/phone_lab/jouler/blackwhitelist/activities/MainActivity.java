@@ -222,6 +222,19 @@ public class MainActivity extends Activity {
         startJoulerBase();
     }
 
+    public void exit(View view) {
+        Button button = (Button) view;
+        int id = button.getId();
+
+        switch (id) {
+            case R.id.exit:
+                finish();
+                break;
+            default:
+                Log.d(Utils.TAG, "Click UNKNOWN button");
+        }
+    }
+
     public void moveButtonOnClick(View view) {
         Button button = (Button) view;
         int id = button.getId();
