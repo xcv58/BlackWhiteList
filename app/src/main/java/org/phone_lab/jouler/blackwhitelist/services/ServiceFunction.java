@@ -455,12 +455,18 @@ public class ServiceFunction {
                 int uid = onePackage.getInt(Utils.JSON_Uid);
                 switch (mechanism) {
                     case RESET_PRIORITY:
+                        Integer originalPriority = priorityChangedPackageMap.get(uid);
+                        if (originalPriority == null) {
+                            priorityChangedPackageMap.put(uid, originalPriority);
+                        }
                         service.iJoulerBaseService.resetPriority(uid, globalPriority);
                         break;
                     case ADD_RATE_LIMIT:
+                        rateLimitPackageSet.add(uid);
                         service.iJoulerBaseService.addRateLimitRule(uid);
                         break;
                     case DEL_RATE_LIMIT:
+                        rateLimitPackageSet.remove(uid);
                         service.iJoulerBaseService.delRateLimitRule(uid);
                         break;
                 }
@@ -501,6 +507,7 @@ public class ServiceFunction {
 
     public void reset() {
         // should reset everything.
+        Utils.log(Utils.RESET_EVERYTHING, "");
         try {
             for (Integer uid : rateLimitPackageSet) {
                 service.iJoulerBaseService.delRateLimitRule(uid);

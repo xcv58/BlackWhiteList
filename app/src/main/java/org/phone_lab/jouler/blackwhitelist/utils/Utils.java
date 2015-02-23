@@ -51,6 +51,7 @@ public class Utils {
     public static final String LEAVE_SAVEMODE = "Leave saveMode";
     public static final String PUNISH = "Punish";
     public static final String FORGIVE = "Forgive";
+    public static final String RESET_EVERYTHING = "Reset everything";
 
     public static void log(String key, String value) {
         long timeStamp = System.currentTimeMillis();
