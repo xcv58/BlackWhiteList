@@ -63,12 +63,16 @@ public class EnergyDetails {
                 listEnergy.fgEnergy += Double.parseDouble(fgEnergy.toString());
                 listEnergy.bgEnergy += Double.parseDouble(bgEnergy.toString());
 
-                Log.d(Utils.TAG, "Package name: " + packageName + "; fgEnergy: " + fgEnergy + "; bgEnergy: " + bgEnergy);
+//                Log.d(Utils.TAG, "Package name: " + packageName + "; fgEnergy: " + fgEnergy + "; bgEnergy: " + bgEnergy);
             }
-            Utils.log(Utils.ENERGY_DETAILs, energyDetailJSONObject);
+            Utils.log(Utils.ENERGY_DETAILs, energyDetailJSONObject.toString());
         } catch (JSONException e) {
             Log.d(Utils.TAG, e.toString());
         }
+    }
+
+    public JSONObject getEnergyDetailJSONObject() {
+        return energyDetailJSONObject;
     }
 
     public ListEnergy getListEnergy(String target) {

@@ -14,9 +14,11 @@ import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
 import android.widget.Toast;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.phone_lab.jouler.blackwhitelist.activities.App;
+import org.phone_lab.jouler.blackwhitelist.utils.Mechanism;
 import org.phone_lab.jouler.blackwhitelist.utils.Utils;
 
 import java.io.FileInputStream;
@@ -47,8 +49,12 @@ public class ServiceFunction {
 
     private int globalPriority = 10;
     private boolean isBrightnessSet;
-
     private int batteryLevel;
+
+    private static final float BLACK_THRESHOLD_PUNISH = 0.2f;
+    private static final float BLACK_THRESHOLD_FORGIVE = 0.01f;
+    private static final float NORMAL_THRESHOLD_PUNISH = 0.7f;
+    private static final float NORMAL_THRESHOLD_FORGIVE = 0.3f;
 
     private BroadcastReceiver activityResumePauseReceiver = new BroadcastReceiver() {
         @Override
@@ -187,6 +193,7 @@ public class ServiceFunction {
     private void initListMap() {
         if (listMap == null) {
             this.listMap = this.readListMap();
+            Utils.log(Utils.LIST_DETAILS, this.getListDetails().toString());
             Log.d(Utils.TAG, "ListMap: " + listMap.toString());
         }
     }
@@ -266,7 +273,7 @@ public class ServiceFunction {
             listMap.put(packageName, target);
         }
         // DONE: This should output all app's information.
-        Utils.log(Utils.LIST_DETAILS, this.getListDetails());
+        Utils.log(Utils.LIST_DETAILS, this.getListDetails().toString());
         this.clearSelectSet();
         batteryLevelChanged();
         return result;
@@ -310,6 +317,7 @@ public class ServiceFunction {
 
     private void saveMode(int uid, String packageName) {
         Log.d(Utils.TAG, "Enable saveMode for: " + packageName);
+        Utils.log(Utils.ENABLE_SAVEMODE, packageName);
 
         try {
             if (service.iJoulerBaseServiceBound) {
@@ -364,12 +372,109 @@ public class ServiceFunction {
             EnergyDetails.ListEnergy blackListEnergy = energyDetails.getListEnergy(Utils.BLACKLIST_TAB);
             EnergyDetails.ListEnergy normalListEnergy = energyDetails.getListEnergy(Utils.NORMALLIST_TAB);
             EnergyDetails.ListEnergy whiteListEnergy = energyDetails.getListEnergy(Utils.WHITELIST_TAB);
+            double blackListTotal = blackListEnergy.fgEnergy + blackListEnergy.bgEnergy;
+            double whiteListTotal = whiteListEnergy.fgEnergy + whiteListEnergy.bgEnergy;
+            double normalListTotal = normalListEnergy.fgEnergy + normalListEnergy.bgEnergy;
+            double total = blackListTotal + whiteListTotal + normalListTotal;
+            double blackRatio = blackListTotal / total;
+            double whiteRatio = whiteListTotal / total;
+            double normalRatio = normalListTotal / total;
+            boolean blackPunish = blackRatio > BLACK_THRESHOLD_PUNISH;
+            boolean normalPunish = normalRatio > NORMAL_THRESHOLD_PUNISH;
+            boolean blackForgive = blackRatio < BLACK_THRESHOLD_FORGIVE;
+            boolean normalForgive = normalRatio < NORMAL_THRESHOLD_FORGIVE;
+            if (blackPunish && normalPunish) {
+                punish(energyDetails);
+            }
+            if (blackForgive && normalForgive) {
+                forgive(energyDetails);
+            }
         } catch (RemoteException e) {
             Log.d(Utils.TAG, e.toString());
         }
     }
 
+    private void punish(EnergyDetails energyDetails) {
+        int priority = globalPriority;
+        Utils.log(Utils.PUNISH, "" + globalPriority);
+        if (priority == 20) {
+            globalPriority = priority + 1;
+            try {
+                JSONObject energyDetailJSONObject = energyDetails.getEnergyDetailJSONObject();
+                JSONArray blackArray = (JSONArray) energyDetailJSONObject.get(Utils.BLACKLIST_TAB);
+                applyForAll(blackArray, Mechanism.DEL_RATE_LIMIT);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        } else if (priority == 21) {
+//            makeNotification((isBlackList() ? MainActivity.BLACK_LIST : MainActivity.WHITE_LIST), (isBlackList() ? "Apps in BlackList use too much energy" : "Apps not in WhiteList use too much energy"), ENERGY_NOTIFICATION_ID);
+        } else {
+            globalPriority = priority + 1;
+            applyForAll(energyDetails, Mechanism.RESET_PRIORITY);
+        }
+        return;
+    }
+
+    private void forgive(EnergyDetails energyDetails) {
+        int priority = globalPriority;
+        Utils.log(Utils.FORGIVE, "" + globalPriority);
+        if (priority == 21) {
+            globalPriority = priority - 1;
+            try {
+                JSONObject energyDetailJSONObject = energyDetails.getEnergyDetailJSONObject();
+                JSONArray blackArray = (JSONArray) energyDetailJSONObject.get(Utils.BLACKLIST_TAB);
+                applyForAll(blackArray, Mechanism.DEL_RATE_LIMIT);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        } else if (priority == 0) {
+//            makeNotification((isBlackList() ? MainActivity.BLACK_LIST : MainActivity.WHITE_LIST), (isBlackList() ? "Apps in BlackList use few energy" : "Apps not in WhiteList use few energy"), ENERGY_NOTIFICATION_ID);
+        } else {
+            applyForAll(energyDetails, Mechanism.RESET_PRIORITY);
+        }
+        return;
+    }
+
+    private void applyForAll(EnergyDetails energyDetails, Mechanism mechanism) {
+        try {
+            JSONObject energyDetailJSONObject = energyDetails.getEnergyDetailJSONObject();
+            JSONArray blackArray = (JSONArray) energyDetailJSONObject.get(Utils.BLACKLIST_TAB);
+            JSONArray normalArray = (JSONArray) energyDetailJSONObject.get(Utils.NORMALLIST_TAB);
+            applyForAll(blackArray, mechanism);
+            applyForAll(normalArray, mechanism);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void applyForAll(JSONArray jsonArray, Mechanism mechanism) {
+        try {
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject onePackage = (JSONObject) jsonArray.get(i);
+                String packageName = onePackage.getString(Utils.JSON_packageName);
+                int uid = onePackage.getInt(Utils.JSON_Uid);
+                switch (mechanism) {
+                    case RESET_PRIORITY:
+                        service.iJoulerBaseService.resetPriority(uid, globalPriority);
+                        break;
+                    case ADD_RATE_LIMIT:
+                        service.iJoulerBaseService.addRateLimitRule(uid);
+                        break;
+                    case DEL_RATE_LIMIT:
+                        service.iJoulerBaseService.delRateLimitRule(uid);
+                        break;
+                }
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+    }
+
+
     private void leaveMode(int uid, String packageName) {
+        Utils.log(Utils.LEAVE_SAVEMODE, packageName);
         try {
             if (service.iJoulerBaseServiceBound) {
                 if (isBrightnessSet) {

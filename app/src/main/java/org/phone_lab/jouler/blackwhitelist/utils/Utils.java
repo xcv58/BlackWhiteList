@@ -47,14 +47,18 @@ public class Utils {
 
     public static final String TIME_STAMP = "EpochTime";
     public static final String ENERGY_DETAILs = "Energy Details";
+    public static final String ENABLE_SAVEMODE = "Enable saveMode";
+    public static final String LEAVE_SAVEMODE = "Leave saveMode";
+    public static final String PUNISH = "Punish";
+    public static final String FORGIVE = "Forgive";
 
-    public static void log(String key, JSONObject jsonObject) {
+    public static void log(String key, String value) {
         long timeStamp = System.currentTimeMillis();
-        JSONObject object = new JSONObject();
+        JSONObject jsonObject = new JSONObject();
         try {
-            object.put(TIME_STAMP, timeStamp);
-            object.put(key, jsonObject);
-            Log.d(TAG, object.toString());
+            jsonObject.put(TIME_STAMP, timeStamp);
+            jsonObject.put(key, value);
+            Log.d(TAG, jsonObject.toString());
         } catch (JSONException e) {
             Log.d(TAG, e.toString());
         }
