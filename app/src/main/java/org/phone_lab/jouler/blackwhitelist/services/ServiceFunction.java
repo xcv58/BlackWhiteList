@@ -275,7 +275,7 @@ public class ServiceFunction {
         // DONE: This should output all app's information.
         Utils.log(Utils.LIST_DETAILS, this.getListDetails().toString());
         this.clearSelectSet();
-        batteryLevelChanged();
+//        batteryLevelChanged();
         return result;
     }
 
