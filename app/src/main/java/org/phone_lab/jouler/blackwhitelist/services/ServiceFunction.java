@@ -265,10 +265,25 @@ public class ServiceFunction {
             Log.d(Utils.TAG, "Move to " + packageName + ", " + target);
             listMap.put(packageName, target);
         }
-//        Log.d(Utils.TAG, "ListMap: " + listMap.toString());
+        // DONE: This should output all app's information.
+        Utils.log(Utils.LIST_DETAILS, this.getListDetails());
         this.clearSelectSet();
         batteryLevelChanged();
         return result;
+    }
+
+    private JSONObject getListDetails() {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            for (Map.Entry<String, String> entry : listMap.entrySet()) {
+                String packageName = entry.getKey();
+                String belongList = entry.getValue();
+                jsonObject.put(packageName, belongList);
+            }
+        } catch (JSONException e) {
+            Log.d(Utils.TAG, e.toString());
+        }
+        return jsonObject;
     }
 
     private void registerBunchReceiver() {
@@ -277,20 +292,20 @@ public class ServiceFunction {
         intentFilter.addAction(Intent.ACTION_PAUSE_ACTIVITY);
         service.registerReceiver(activityResumePauseReceiver, intentFilter);
 
-//        IntentFilter batteryChangeIntentFilter = new IntentFilter();
-//        batteryChangeIntentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
-//        service.registerReceiver(onBatteryChange, batteryChangeIntentFilter);
-//
+        IntentFilter batteryChangeIntentFilter = new IntentFilter();
+        batteryChangeIntentFilter.addAction(Intent.ACTION_BATTERY_CHANGED);
+        service.registerReceiver(onBatteryChange, batteryChangeIntentFilter);
+
 //        IntentFilter screenOnOffIntentFilter = new IntentFilter();
 //        screenOnOffIntentFilter.addAction(Intent.ACTION_SCREEN_ON);
 //        screenOnOffIntentFilter.addAction(Intent.ACTION_SCREEN_OFF);
 //        service.registerReceiver(screenReceiver, screenOnOffIntentFilter);
     }
 
-    private void unregisterBunchReceiver(BlackWhiteListService service) {
+    private void unregisterBunchReceiver() {
         service.unregisterReceiver(activityResumePauseReceiver);
 //        service.unregisterReceiver(screenReceiver);
-//        service.unregisterReceiver(onBatteryChange);
+        service.unregisterReceiver(onBatteryChange);
     }
 
     private void saveMode(int uid, String packageName) {
@@ -342,49 +357,16 @@ public class ServiceFunction {
             return;
         }
         try {
+            // TODO: statistics different app usage information.
+            // TODO: and depend on this information to decide next action.
             String src = service.iJoulerBaseService.getStatistics();
-            JSONObject json = new JSONObject(src);
-            Iterator<String> e = json.keys();
-            while (e.hasNext()) {
-                String packageName = e.next();
-                String whichList = listMap.get(packageName);
-                if (whichList == null) {
-                    Log.d(Utils.TAG, packageName + " not in list.");
-                    continue;
-                }
-                Log.d(Utils.TAG, packageName + ":");
-                JSONObject uidStats = json.getJSONObject(packageName);
-//                Iterator<String> uidStatsE = uidStats.keys();
-//                json.put("FgEnergy", u.getFgEnergy());
-//                json.put("BgEnergy", u.getBgEnergy());
-                Object fgEnergy = uidStats.get(Utils.JSON_FgEnergy);
-                Log.d(Utils.TAG, "Package name: " + packageName + "; fgEnergy: " + fgEnergy);
-//                Double.parseDouble(uidStats.get(Utils.JSON_FgEnergy).toString());
-
-//                while (uidStatsE.hasNext()) {
-//                    String attribute = uidStatsE.next();
-//                    Log.d(Utils.TAG, "Package name: " + key + "; " + attribute + ": " + uidStats.get(attribute));
-//                }
-            }
+            EnergyDetails energyDetails = new EnergyDetails(listMap, src);
+            EnergyDetails.ListEnergy blackListEnergy = energyDetails.getListEnergy(Utils.BLACKLIST_TAB);
+            EnergyDetails.ListEnergy normalListEnergy = energyDetails.getListEnergy(Utils.NORMALLIST_TAB);
+            EnergyDetails.ListEnergy whiteListEnergy = energyDetails.getListEnergy(Utils.WHITELIST_TAB);
         } catch (RemoteException e) {
-            e.printStackTrace();
-        } catch (JSONException e) {
-            e.printStackTrace();
+            Log.d(Utils.TAG, e.toString());
         }
-//        initListMap();
-//        for (Map.Entry<String, String> entry : listMap.entrySet()) {
-//            String packageName = entry.getKey();
-//            String whichList = entry.getValue();
-//            if (whichList.equals(Utils.BLACKLIST_TAB)) {
-//                Log.d(Utils.TAG, packageName + " is in " + whichList);
-//            } else if (whichList.equals(Utils.NORMALLIST_TAB)) {
-//                Log.d(Utils.TAG, packageName + " is in " + whichList);
-//            } else if (whichList.equals(Utils.WHITELIST_TAB)) {
-//                Log.d(Utils.TAG, packageName + " is in " + whichList);
-//            } else {
-//                Log.d(Utils.TAG, "ERROR: " + packageName + " is in " + whichList + ", which doesn't exist!");
-//            }
-//        }
     }
 
     private void leaveMode(int uid, String packageName) {
@@ -426,7 +408,8 @@ public class ServiceFunction {
             }
             priorityChangedPackageMap.clear();
         } catch (RemoteException e) {
-            e.printStackTrace();
+            Log.d(Utils.TAG, e.toString());
         }
+        this.unregisterBunchReceiver();
     }
 }

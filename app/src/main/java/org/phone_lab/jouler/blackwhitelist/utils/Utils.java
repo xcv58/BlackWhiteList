@@ -1,15 +1,24 @@
 package org.phone_lab.jouler.blackwhitelist.utils;
 
+import android.util.Log;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 /**
  * Created by xcv58 on 1/23/15.
  */
 public class Utils {
     public static final String TAG = "JoulerBlackWhiteList";
+
     public static final String BLACKLIST_TAB = "Black List";
     public static final String NORMALLIST_TAB = "Normal List";
     public static final String WHITELIST_TAB = "White List";
+    public static final String UNKNOWN_TAB = "Not in List";
+
     public static final String[] TABS_ARRAY = {BLACKLIST_TAB, NORMALLIST_TAB, WHITELIST_TAB};
     public static final int NO_UID = -1;
+    public static final String LIST_DETAILS = "List details";
 
     public static final String PACKAGE = "Package";
     public static final String USERID = "UserId";
@@ -35,5 +44,20 @@ public class Utils {
     public static final String JSON_Throttle = "Throttle";
     public static final String JSON_Count = "Count";
     public static final String JSON_UsageTime = "UsageTime";
+
+    public static final String TIME_STAMP = "EpochTime";
+    public static final String ENERGY_DETAILs = "Energy Details";
+
+    public static void log(String key, JSONObject jsonObject) {
+        long timeStamp = System.currentTimeMillis();
+        JSONObject object = new JSONObject();
+        try {
+            object.put(TIME_STAMP, timeStamp);
+            object.put(key, jsonObject);
+            Log.d(TAG, object.toString());
+        } catch (JSONException e) {
+            Log.d(TAG, e.toString());
+        }
+    }
 }
 

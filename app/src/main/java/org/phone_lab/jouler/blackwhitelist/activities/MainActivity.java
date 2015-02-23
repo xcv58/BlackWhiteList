@@ -93,7 +93,7 @@ public class MainActivity extends Activity {
                     // ask to get permission;
                     startJoulerBase();
                 }
-                iJoulerBaseService.test("From another app", "hh");
+//                iJoulerBaseService.test("From another app", "hh");
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -282,7 +282,7 @@ public class MainActivity extends Activity {
                 Toast.makeText(this, "No Permission", Toast.LENGTH_LONG).show();
                 return;
             }
-            iJoulerBaseService.test("Test", "from button");
+//            iJoulerBaseService.test("Test", "from button");
         } catch (RemoteException e) {
             e.printStackTrace();
         }
