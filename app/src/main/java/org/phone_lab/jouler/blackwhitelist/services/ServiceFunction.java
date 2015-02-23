@@ -53,7 +53,7 @@ public class ServiceFunction {
 
     private static final float BLACK_THRESHOLD_PUNISH = 0.2f;
     private static final float BLACK_THRESHOLD_FORGIVE = 0.01f;
-    private static final float NORMAL_THRESHOLD_PUNISH = 0.7f;
+    private static final float NORMAL_THRESHOLD_PUNISH = 0.5f;
     private static final float NORMAL_THRESHOLD_FORGIVE = 0.3f;
 
     private BroadcastReceiver activityResumePauseReceiver = new BroadcastReceiver() {
@@ -383,7 +383,7 @@ public class ServiceFunction {
             boolean normalPunish = normalRatio > NORMAL_THRESHOLD_PUNISH;
             boolean blackForgive = blackRatio < BLACK_THRESHOLD_FORGIVE;
             boolean normalForgive = normalRatio < NORMAL_THRESHOLD_FORGIVE;
-            if (blackPunish && normalPunish) {
+            if (blackPunish || normalPunish) {
                 punish(energyDetails);
             }
             if (blackForgive && normalForgive) {
