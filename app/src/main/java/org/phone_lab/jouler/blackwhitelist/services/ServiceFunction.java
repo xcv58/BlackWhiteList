@@ -369,34 +369,62 @@ public class ServiceFunction {
             // TODO: and depend on this information to decide next action.
             String src = service.iJoulerBaseService.getStatistics();
             EnergyDetails energyDetails = new EnergyDetails(listMap, src);
-            EnergyDetails.ListEnergy blackListEnergy = energyDetails.getListEnergy(Utils.BLACKLIST_TAB);
-            EnergyDetails.ListEnergy normalListEnergy = energyDetails.getListEnergy(Utils.NORMALLIST_TAB);
-            EnergyDetails.ListEnergy whiteListEnergy = energyDetails.getListEnergy(Utils.WHITELIST_TAB);
-            double blackListTotal = blackListEnergy.fgEnergy + blackListEnergy.bgEnergy;
-            double whiteListTotal = whiteListEnergy.fgEnergy + whiteListEnergy.bgEnergy;
-            double normalListTotal = normalListEnergy.fgEnergy + normalListEnergy.bgEnergy;
-            double total = blackListTotal + whiteListTotal + normalListTotal;
-            double blackRatio = blackListTotal / total;
-            double whiteRatio = whiteListTotal / total;
-            double normalRatio = normalListTotal / total;
+            JSONObject ratioJSONObject = this.getRatioJSONObject(energyDetails);
+            double blackRatio = ratioJSONObject.getDouble(Utils.JSON_BlackRatio);
+            double whiteRatio = ratioJSONObject.getDouble(Utils.JSON_WhiteRatio);
+            double normalRatio = ratioJSONObject.getDouble(Utils.JSON_NormalRatio);
+
             boolean blackPunish = blackRatio > BLACK_THRESHOLD_PUNISH;
-            boolean normalPunish = normalRatio > NORMAL_THRESHOLD_PUNISH;
             boolean blackForgive = blackRatio < BLACK_THRESHOLD_FORGIVE;
+
+            boolean normalPunish = normalRatio > NORMAL_THRESHOLD_PUNISH;
             boolean normalForgive = normalRatio < NORMAL_THRESHOLD_FORGIVE;
+
             if (blackPunish || normalPunish) {
+                Utils.log(Utils.PUNISH, ratioJSONObject.toString());
                 punish(energyDetails);
-            }
-            if (blackForgive && normalForgive) {
+            } else if (blackForgive && normalForgive) {
+                Utils.log(Utils.FORGIVE, ratioJSONObject.toString());
                 forgive(energyDetails);
+            } else {
+                Utils.log(Utils.DONOTHING, ratioJSONObject.toString());
             }
         } catch (RemoteException e) {
             Log.d(Utils.TAG, e.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
+    }
+
+    private JSONObject getRatioJSONObject(EnergyDetails energyDetails) {
+        JSONObject jsonObject = new JSONObject();
+        EnergyDetails.ListEnergy blackListEnergy = energyDetails.getListEnergy(Utils.BLACKLIST_TAB);
+        EnergyDetails.ListEnergy normalListEnergy = energyDetails.getListEnergy(Utils.NORMALLIST_TAB);
+        EnergyDetails.ListEnergy whiteListEnergy = energyDetails.getListEnergy(Utils.WHITELIST_TAB);
+        double blackListTotal = blackListEnergy.fgEnergy + blackListEnergy.bgEnergy;
+        double whiteListTotal = whiteListEnergy.fgEnergy + whiteListEnergy.bgEnergy;
+        double normalListTotal = normalListEnergy.fgEnergy + normalListEnergy.bgEnergy;
+        double total = blackListTotal + whiteListTotal + normalListTotal;
+        double blackRatio = blackListTotal / total;
+        double whiteRatio = whiteListTotal / total;
+        double normalRatio = normalListTotal / total;
+        try {
+            jsonObject.put(Utils.GLOBAL_PRIORITY, globalPriority);
+            jsonObject.put(Utils.BATTERY_LEVEL, batteryLevel);
+            jsonObject.put(Utils.JSON_BlackTotal, blackListTotal);
+            jsonObject.put(Utils.JSON_NormalTotal, normalListTotal);
+            jsonObject.put(Utils.JSON_WhiteTotal, whiteListTotal);
+            jsonObject.put(Utils.JSON_BlackRatio, blackRatio);
+            jsonObject.put(Utils.JSON_NormalRatio, normalRatio);
+            jsonObject.put(Utils.JSON_WhiteRatio, whiteRatio);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        return jsonObject;
     }
 
     private void punish(EnergyDetails energyDetails) {
         int priority = globalPriority;
-        Utils.log(Utils.PUNISH, "" + globalPriority);
         if (priority == 20) {
             globalPriority = priority + 1;
             try {
@@ -417,7 +445,6 @@ public class ServiceFunction {
 
     private void forgive(EnergyDetails energyDetails) {
         int priority = globalPriority;
-        Utils.log(Utils.FORGIVE, "" + globalPriority);
         if (priority == 21) {
             globalPriority = priority - 1;
             try {

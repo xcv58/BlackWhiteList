@@ -7,10 +7,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.phone_lab.jouler.blackwhitelist.utils.Utils;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 
 /**
  * Created by xcv58 on 2/23/15.
@@ -65,7 +63,7 @@ public class EnergyDetails {
 
 //                Log.d(Utils.TAG, "Package name: " + packageName + "; fgEnergy: " + fgEnergy + "; bgEnergy: " + bgEnergy);
             }
-            Utils.log(Utils.ENERGY_DETAILs, energyDetailJSONObject.toString());
+            Utils.log(Utils.ENERGY_DETAILS, energyDetailJSONObject.toString());
         } catch (JSONException e) {
             Log.d(Utils.TAG, e.toString());
         }

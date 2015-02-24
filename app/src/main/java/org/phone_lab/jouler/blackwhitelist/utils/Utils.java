@@ -45,13 +45,29 @@ public class Utils {
     public static final String JSON_Count = "Count";
     public static final String JSON_UsageTime = "UsageTime";
 
+    public static final String JSON_BlackTotal = "Black Total";
+    public static final String JSON_NormalTotal = "Normal Total";
+    public static final String JSON_WhiteTotal = "White Total";
+    public static final String JSON_BlackRatio = "Black Ratio";
+    public static final String JSON_NormalRatio = "Normal Ratio";
+    public static final String JSON_WhiteRatio = "White Ratio";
+
+    public static final String GLOBAL_PRIORITY = "Global Priority";
+    public static final String BATTERY_LEVEL = "Battery Level";
+
     public static final String TIME_STAMP = "EpochTime";
-    public static final String ENERGY_DETAILs = "Energy Details";
+    public static final String ENERGY_DETAILS = "Energy Details";
     public static final String ENABLE_SAVEMODE = "Enable saveMode";
     public static final String LEAVE_SAVEMODE = "Leave saveMode";
+
     public static final String PUNISH = "Punish";
     public static final String FORGIVE = "Forgive";
+    public static final String DONOTHING = "Do nothing";
+
     public static final String RESET_EVERYTHING = "Reset everything";
+
+    public static final String RESUME = "Jouler BlackWhiteList resume";
+    public static final String PAUSE = "Jouler BlackWhiteList pause";
 
     public static void log(String key, String value) {
         long timeStamp = System.currentTimeMillis();

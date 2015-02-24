@@ -166,6 +166,7 @@ public class MainActivity extends Activity {
         super.onResume();
         if (!joulerBaseExist) { return; }
         if (!permissionGranted) { return; }
+        Utils.log(Utils.RESUME, "");
 
         if (!mBound) {
             Log.d(Utils.TAG, "bind mService");
@@ -188,6 +189,8 @@ public class MainActivity extends Activity {
 
         if (!joulerBaseExist) { return; }
         if (!permissionGranted) { return; }
+
+        Utils.log(Utils.PAUSE, target);
 
         saveTarget();
 
