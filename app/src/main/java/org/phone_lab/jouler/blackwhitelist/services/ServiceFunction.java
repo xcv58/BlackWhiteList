@@ -1,6 +1,7 @@
 package org.phone_lab.jouler.blackwhitelist.services;
 
 import android.app.Service;
+import android.app.UiAutomation;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -73,12 +74,26 @@ public class ServiceFunction {
             sb.append(uid);
             String action = intent.getAction();
             if (action.equals(Intent.ACTION_RESUME_ACTIVITY)) {
-                if (isTargetApp(packageName, Utils.BLACKLIST_TAB)) {
-                    saveMode(uid, packageName);
+                if (isTargetApp(packageName, Utils.BLACKLIST_TAB) || isTargetApp(packageName, Utils.NORMALLIST_TAB)) {
+                    if (rateLimitPackageSet.contains(uid)) {
+                        try {
+                            rateLimitPackageSet.remove(uid);
+                            service.iJoulerBaseService.delRateLimitRule(uid);
+                        } catch (RemoteException e) {
+                            Utils.log(Utils.TAG, e.toString());
+                        }
+                    }
                 }
             } else if (action.equals(Intent.ACTION_PAUSE_ACTIVITY)) {
-                if (isTargetApp(packageName, Utils.BLACKLIST_TAB)) {
-                    leaveMode(uid, packageName);
+                if (isTargetApp(packageName, Utils.BLACKLIST_TAB) || isTargetApp(packageName, Utils.NORMALLIST_TAB)) {
+                    if (!rateLimitPackageSet.contains(uid)) {
+                        try {
+                            rateLimitPackageSet.add(uid);
+                            service.iJoulerBaseService.addRateLimitRule(uid);
+                        } catch (RemoteException e) {
+                            Utils.log(Utils.TAG, e.toString());
+                        }
+                    }
                 }
             }
         }
@@ -171,7 +186,28 @@ public class ServiceFunction {
             e.printStackTrace();
             return false;
         }
+        this.applyRateLimitForAll();
         return true;
+    }
+
+    private void applyRateLimitForAll() {
+        try {
+            String src = service.iJoulerBaseService.getStatistics();
+            EnergyDetails energyDetails = new EnergyDetails(listMap, src);
+            JSONObject ratioJSONObject = this.getRatioJSONObject(energyDetails);
+
+            JSONObject energyDetailJSONObject = energyDetails.getEnergyDetailJSONObject();
+            JSONArray blackArray = (JSONArray) energyDetailJSONObject.get(Utils.BLACKLIST_TAB);
+            JSONArray normalArray = (JSONArray) energyDetailJSONObject.get(Utils.NORMALLIST_TAB);
+            Utils.log("Apply RateLimit on black: ", blackArray.toString());
+            applyForAll(blackArray, Mechanism.ADD_RATE_LIMIT);
+            Utils.log("Apply RateLimit on normal: ", normalArray.toString());
+            applyForAll(normalArray, Mechanism.ADD_RATE_LIMIT);
+        } catch (RemoteException e) {
+            Log.d(Utils.TAG, e.toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
     }
 
     public boolean isTargetApp(String packageName, String target) {
@@ -380,15 +416,15 @@ public class ServiceFunction {
             boolean normalPunish = normalRatio > NORMAL_THRESHOLD_PUNISH;
             boolean normalForgive = normalRatio < NORMAL_THRESHOLD_FORGIVE;
 
-            if (blackPunish || normalPunish) {
-                Utils.log(Utils.PUNISH, ratioJSONObject.toString());
-                punish(energyDetails);
-            } else if (blackForgive && normalForgive) {
-                Utils.log(Utils.FORGIVE, ratioJSONObject.toString());
-                forgive(energyDetails);
-            } else {
+//            if (blackPunish || normalPunish) {
+//                Utils.log(Utils.PUNISH, ratioJSONObject.toString());
+//                punish(energyDetails);
+//            } else if (blackForgive && normalForgive) {
+//                Utils.log(Utils.FORGIVE, ratioJSONObject.toString());
+//                forgive(energyDetails);
+//            } else {
                 Utils.log(Utils.DONOTHING, ratioJSONObject.toString());
-            }
+//            }
         } catch (RemoteException e) {
             Log.d(Utils.TAG, e.toString());
         } catch (JSONException e) {
@@ -504,7 +540,6 @@ public class ServiceFunction {
             e.printStackTrace();
         }
     }
-
 
     private void leaveMode(int uid, String packageName) {
         Utils.log(Utils.LEAVE_SAVEMODE, packageName);
