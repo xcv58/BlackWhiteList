@@ -1,10 +1,13 @@
 package org.phone_lab.jouler.blackwhitelist.services;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
 import android.widget.Toast;
@@ -92,6 +95,15 @@ public class BlackWhiteListService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         super.onStartCommand(intent, flags, startId);
         Log.d(Utils.TAG, Utils.TAG + " onStartCommand");
+        Bundle bundle = intent.getExtras();
+        if (bundle != null) {
+            if (SCHEDULED.equals(bundle.get(START_MODE))) {
+                Log.d(Utils.TAG, "onStartCommand by Scheduled");
+                initServiceFunction();
+                serviceFunction.batteryLevelChanged();
+                setScheduledLog();
+            }
+        }
         return START_REDELIVER_INTENT;
     }
 
@@ -152,9 +164,23 @@ public class BlackWhiteListService extends Service {
         return serviceFunction.getSelectSet();
     }
 
+    public static final String START_MODE = "Start mode";
+    public static final String SCHEDULED = "Schedule";
+    public static final long INTERVAL = 1000L * 60L * 5L;
+
+    private void setScheduledLog() {
+        Intent serviceIntent = new Intent(this, BlackWhiteListService.class);
+        Log.d(Utils.TAG, "Scheduled alarm start");
+        serviceIntent.putExtra(START_MODE, SCHEDULED);
+        PendingIntent pendingIntent = PendingIntent.getService(this, 0, serviceIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        AlarmManager alarmMgr = (AlarmManager) getSystemService(ALARM_SERVICE);
+        alarmMgr.setExact(alarmMgr.RTC, System.currentTimeMillis() + INTERVAL, pendingIntent);
+    }
+
     private void initServiceFunction() {
         if (serviceFunction == null) {
             serviceFunction = new ServiceFunction(this);
+            setScheduledLog();
         }
         if (!iJoulerBaseServiceBound) {
             Intent intent = new Intent(IJoulerBaseService.class.getName());
