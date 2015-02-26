@@ -96,7 +96,6 @@ public class ServiceFunction {
                         try {
                             Utils.log(Utils.CONTROL_MAX_CPU_FRE_LOW + " by RESUME: ", packageName);
                             cpuControlSet.add(uid);
-                            batteryLevelChanged();
                             service.iJoulerBaseService.controlCpuMaxFrequency(MAX_CPU_FREQUENCY_LOW);
                         } catch (RemoteException e) {
                             Utils.log(Utils.TAG, e.toString());
