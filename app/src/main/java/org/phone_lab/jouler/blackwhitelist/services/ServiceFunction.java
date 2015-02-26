@@ -96,6 +96,7 @@ public class ServiceFunction {
                         try {
                             Utils.log(Utils.CONTROL_MAX_CPU_FRE_LOW + " by RESUME: ", packageName);
                             cpuControlSet.add(uid);
+                            batteryLevelChanged();
                             service.iJoulerBaseService.controlCpuMaxFrequency(MAX_CPU_FREQUENCY_LOW);
                         } catch (RemoteException e) {
                             Utils.log(Utils.TAG, e.toString());
@@ -393,7 +394,7 @@ public class ServiceFunction {
         return true;
     }
 
-    private void batteryLevelChanged() {
+    public void batteryLevelChanged() {
         // do some computation to get threshold
         // do punish or forgive based on the threshold
         Log.d(Utils.TAG, "batteryLevelChanged");
@@ -424,7 +425,7 @@ public class ServiceFunction {
 //                Utils.log(Utils.FORGIVE, ratioJSONObject.toString());
 //                forgive(energyDetails);
 //            } else {
-                Utils.log(Utils.DONOTHING, ratioJSONObject.toString());
+            Utils.log(Utils.DONOTHING, ratioJSONObject.toString());
 //            }
         } catch (RemoteException e) {
             Log.d(Utils.TAG, e.toString());
