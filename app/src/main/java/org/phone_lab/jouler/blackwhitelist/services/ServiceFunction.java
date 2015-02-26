@@ -73,14 +73,30 @@ public class ServiceFunction {
             sb.append(": ");
             sb.append(uid);
             String action = intent.getAction();
+            if (!service.iJoulerBaseServiceBound) {
+                return;
+            }
             if (action.equals(Intent.ACTION_RESUME_ACTIVITY)) {
                 if (isTargetApp(packageName, Utils.BLACKLIST_TAB) || isTargetApp(packageName, Utils.NORMALLIST_TAB)) {
                     if (rateLimitPackageSet.contains(uid)) {
                         try {
+                            Utils.log(Utils.REMOVE_RATE_LIMIT + " by RESUME: ", packageName);
                             rateLimitPackageSet.remove(uid);
                             service.iJoulerBaseService.delRateLimitRule(uid);
                         } catch (RemoteException e) {
                             Utils.log(Utils.TAG, e.toString());
+                            e.printStackTrace();
+                        }
+                    }
+                } else if (isTargetApp(packageName, Utils.WHITELIST_TAB)) {
+                    if (rateLimitPackageSet.contains(uid)) {
+                        try {
+                            Utils.log(Utils.REMOVE_RATE_LIMIT, packageName);
+                            rateLimitPackageSet.remove(uid);
+                            service.iJoulerBaseService.delRateLimitRule(uid);
+                        } catch (RemoteException e) {
+                            Utils.log(Utils.TAG, e.toString());
+                            e.printStackTrace();
                         }
                     }
                 }
@@ -88,10 +104,12 @@ public class ServiceFunction {
                 if (isTargetApp(packageName, Utils.BLACKLIST_TAB) || isTargetApp(packageName, Utils.NORMALLIST_TAB)) {
                     if (!rateLimitPackageSet.contains(uid)) {
                         try {
+                            Utils.log(Utils.ADD_RATE_LIMIT + " by Pause: ", packageName);
                             rateLimitPackageSet.add(uid);
                             service.iJoulerBaseService.addRateLimitRule(uid);
                         } catch (RemoteException e) {
                             Utils.log(Utils.TAG, e.toString());
+                            e.printStackTrace();
                         }
                     }
                 }
