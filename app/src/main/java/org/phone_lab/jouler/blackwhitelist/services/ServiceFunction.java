@@ -30,6 +30,23 @@ import java.util.Set;
  * Created by xcv58 on 1/27/15.
  */
 public class ServiceFunction {
+    private static final int MAX_CPU_FREQUENCY_HIGH = 2265600;
+    private static final int MAX_CPU_FREQUENCY_LOW = 300000;
+    // 300000
+    // 422400
+    // 652800
+    // 729600
+    // 883200
+    // 960000
+    // 1036800
+    // 1190400
+    // 1267200
+    // 1497600
+    // 1574400
+    // 1728000
+    // 1958400
+    // 2265600
+
     private static final String LIST_MAP_LOCATION = "list_storage";
     private static final String TARGET_MAP_LOCATION = "target_map_storage";
     private static final String DEFAULT_LIST = Utils.NORMALLIST_TAB;
@@ -39,7 +56,7 @@ public class ServiceFunction {
     private HashMap<String, HashSet<String>> targetSetMap;
 
     private HashSet<Integer> rateLimitPackageSet;
-    private HashSet<Integer> resetPriorityPackageSet;
+    private HashSet<Integer> cpuControlSet;
     private HashMap<Integer, Integer> priorityChangedPackageMap;
 
     private int globalPriority = 10;
@@ -70,24 +87,16 @@ public class ServiceFunction {
             if (!service.iJoulerBaseServiceBound) {
                 return;
             }
+            if ("com.google.android.googlequicksearchbox".equals(packageName)) {
+                return;
+            }
             if (action.equals(Intent.ACTION_RESUME_ACTIVITY)) {
                 if (isTargetApp(packageName, Utils.BLACKLIST_TAB) || isTargetApp(packageName, Utils.NORMALLIST_TAB)) {
-                    if (resetPriorityPackageSet.contains(uid)) {
+                    if (!cpuControlSet.contains(uid)) {
                         try {
-                            Utils.log(Utils.SET_PRIORITY_HIGHEST + " by RESUME: ", packageName);
-                            resetPriorityPackageSet.remove(uid);
-                            service.iJoulerBaseService.resetPriority(uid, Utils.HIGHEST_PRIORITY);
-                        } catch (RemoteException e) {
-                            Utils.log(Utils.TAG, e.toString());
-                            e.printStackTrace();
-                        }
-                    }
-                } else if (isTargetApp(packageName, Utils.WHITELIST_TAB)) {
-                    if (resetPriorityPackageSet.contains(uid)) {
-                        try {
-                            Utils.log(Utils.SET_PRIORITY_HIGHEST, packageName);
-                            resetPriorityPackageSet.remove(uid);
-                            service.iJoulerBaseService.resetPriority(uid, Utils.HIGHEST_PRIORITY);
+                            Utils.log(Utils.CONTROL_MAX_CPU_FRE_LOW + " by RESUME: ", packageName);
+                            cpuControlSet.add(uid);
+                            service.iJoulerBaseService.controlCpuMaxFrequency(MAX_CPU_FREQUENCY_LOW);
                         } catch (RemoteException e) {
                             Utils.log(Utils.TAG, e.toString());
                             e.printStackTrace();
@@ -96,11 +105,11 @@ public class ServiceFunction {
                 }
             } else if (action.equals(Intent.ACTION_PAUSE_ACTIVITY)) {
                 if (isTargetApp(packageName, Utils.BLACKLIST_TAB) || isTargetApp(packageName, Utils.NORMALLIST_TAB)) {
-                    if (!resetPriorityPackageSet.contains(uid)) {
+                    if (cpuControlSet.contains(uid)) {
                         try {
-                            Utils.log(Utils.SET_PRIORITY_LOWEST + " by Pause: ", packageName);
-                            resetPriorityPackageSet.add(uid);
-                            service.iJoulerBaseService.resetPriority(uid, Utils.LOWEST_PRIORITY);
+                            Utils.log(Utils.CONTROL_MAX_CPU_FRE_HIGH + " by Pause: ", packageName);
+                            cpuControlSet.remove(uid);
+                            service.iJoulerBaseService.controlCpuMaxFrequency(MAX_CPU_FREQUENCY_HIGH);
                         } catch (RemoteException e) {
                             Utils.log(Utils.TAG, e.toString());
                             e.printStackTrace();
@@ -161,7 +170,7 @@ public class ServiceFunction {
         isBrightnessSet = false;
         batteryLevel = -1;
         rateLimitPackageSet = new HashSet<Integer>();
-        resetPriorityPackageSet = new HashSet<Integer>();
+        cpuControlSet = new HashSet<Integer>();
         priorityChangedPackageMap = new HashMap<Integer, Integer>();
         this.registerBunchReceiver();
     }
@@ -199,28 +208,7 @@ public class ServiceFunction {
             e.printStackTrace();
             return false;
         }
-        this.setPriorityToLowestForAll();
         return true;
-    }
-
-    private void setPriorityToLowestForAll() {
-        try {
-            String src = service.iJoulerBaseService.getStatistics();
-            EnergyDetails energyDetails = new EnergyDetails(listMap, src);
-            JSONObject ratioJSONObject = this.getRatioJSONObject(energyDetails);
-
-            JSONObject energyDetailJSONObject = energyDetails.getEnergyDetailJSONObject();
-            JSONArray blackArray = (JSONArray) energyDetailJSONObject.get(Utils.BLACKLIST_TAB);
-            JSONArray normalArray = (JSONArray) energyDetailJSONObject.get(Utils.NORMALLIST_TAB);
-            Utils.log("set priority to lowest for black: ", blackArray.toString());
-            applyForAll(blackArray, Mechanism.RESET_PRIORITY);
-            Utils.log("set priority to lowest for normal: ", normalArray.toString());
-            applyForAll(normalArray, Mechanism.RESET_PRIORITY);
-        } catch (RemoteException e) {
-            Log.d(Utils.TAG, e.toString());
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
     }
 
     public boolean isTargetApp(String packageName, String target) {
@@ -470,85 +458,6 @@ public class ServiceFunction {
             e.printStackTrace();
         }
         return jsonObject;
-    }
-
-    private void punish(EnergyDetails energyDetails) {
-        int priority = globalPriority;
-        if (priority == 20) {
-            globalPriority = priority + 1;
-            try {
-                JSONObject energyDetailJSONObject = energyDetails.getEnergyDetailJSONObject();
-                JSONArray blackArray = (JSONArray) energyDetailJSONObject.get(Utils.BLACKLIST_TAB);
-                applyForAll(blackArray, Mechanism.DEL_RATE_LIMIT);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        } else if (priority == 21) {
-//            makeNotification((isBlackList() ? MainActivity.BLACK_LIST : MainActivity.WHITE_LIST), (isBlackList() ? "Apps in BlackList use too much energy" : "Apps not in WhiteList use too much energy"), ENERGY_NOTIFICATION_ID);
-        } else {
-            globalPriority = priority + 1;
-            applyForAll(energyDetails, Mechanism.RESET_PRIORITY);
-        }
-        return;
-    }
-
-    private void forgive(EnergyDetails energyDetails) {
-        int priority = globalPriority;
-        if (priority == 21) {
-            globalPriority = priority - 1;
-            try {
-                JSONObject energyDetailJSONObject = energyDetails.getEnergyDetailJSONObject();
-                JSONArray blackArray = (JSONArray) energyDetailJSONObject.get(Utils.BLACKLIST_TAB);
-                applyForAll(blackArray, Mechanism.DEL_RATE_LIMIT);
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-        } else if (priority == 0) {
-//            makeNotification((isBlackList() ? MainActivity.BLACK_LIST : MainActivity.WHITE_LIST), (isBlackList() ? "Apps in BlackList use few energy" : "Apps not in WhiteList use few energy"), ENERGY_NOTIFICATION_ID);
-        } else {
-            applyForAll(energyDetails, Mechanism.RESET_PRIORITY);
-        }
-        return;
-    }
-
-    private void applyForAll(EnergyDetails energyDetails, Mechanism mechanism) {
-        try {
-            JSONObject energyDetailJSONObject = energyDetails.getEnergyDetailJSONObject();
-            JSONArray blackArray = (JSONArray) energyDetailJSONObject.get(Utils.BLACKLIST_TAB);
-            JSONArray normalArray = (JSONArray) energyDetailJSONObject.get(Utils.NORMALLIST_TAB);
-            applyForAll(blackArray, mechanism);
-            applyForAll(normalArray, mechanism);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void applyForAll(JSONArray jsonArray, Mechanism mechanism) {
-        try {
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject onePackage = (JSONObject) jsonArray.get(i);
-                String packageName = onePackage.getString(Utils.JSON_packageName);
-                int uid = onePackage.getInt(Utils.JSON_Uid);
-                switch (mechanism) {
-                    case RESET_PRIORITY:
-                        resetPriorityPackageSet.add(uid);
-                        service.iJoulerBaseService.resetPriority(uid, Utils.LOWEST_PRIORITY);
-                        break;
-                    case ADD_RATE_LIMIT:
-                        rateLimitPackageSet.add(uid);
-                        service.iJoulerBaseService.addRateLimitRule(uid);
-                        break;
-                    case DEL_RATE_LIMIT:
-                        rateLimitPackageSet.remove(uid);
-                        service.iJoulerBaseService.delRateLimitRule(uid);
-                        break;
-                }
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
     }
 
     private void leaveMode(int uid, String packageName) {

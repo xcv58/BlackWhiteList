@@ -69,6 +69,8 @@ public class Utils {
 
     public static final String SET_PRIORITY_LOWEST = "Set priority to 19";
     public static final String SET_PRIORITY_HIGHEST = "Set priority to -20";
+    public static final String CONTROL_MAX_CPU_FRE_LOW = "Control MAX CPU Frequency to Low level";
+    public static final String CONTROL_MAX_CPU_FRE_HIGH = "Control MAX CPU Frequency to High level";
     public static final int LOWEST_PRIORITY = 19;
     public static final int HIGHEST_PRIORITY = -20;
 

@@ -111,6 +111,7 @@ public class AppListFragment extends ListFragment {
         }
         duplicateSet.add(getActivity().getPackageName());
         duplicateSet.add("com.google.android.launcher");
+        duplicateSet.add("com.google.android.googlequicksearchbox");
         PackageManager pm = getActivity().getPackageManager();
         Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
         mainIntent.addCategory(Intent.CATEGORY_HOME);
