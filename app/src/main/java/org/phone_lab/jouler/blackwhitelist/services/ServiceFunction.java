@@ -405,7 +405,7 @@ public class ServiceFunction {
         return true;
     }
 
-    private void batteryLevelChanged() {
+    public void batteryLevelChanged() {
         // do some computation to get threshold
         // do punish or forgive based on the threshold
         Log.d(Utils.TAG, "batteryLevelChanged");
