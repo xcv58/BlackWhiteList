@@ -64,6 +64,9 @@ public class Utils {
     public static final String FORGIVE = "Forgive";
     public static final String DONOTHING = "Do nothing";
 
+    public static final String ADD_RATE_LIMIT = "Add rate limit";
+    public static final String REMOVE_RATE_LIMIT = "Remove rate limit";
+
     public static final String RESET_EVERYTHING = "Reset everything";
 
     public static final String RESUME = "Jouler BlackWhiteList resume";
