@@ -174,7 +174,7 @@ public class BlackWhiteListService extends Service {
         serviceIntent.putExtra(START_MODE, SCHEDULED);
         PendingIntent pendingIntent = PendingIntent.getService(this, 0, serviceIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         AlarmManager alarmMgr = (AlarmManager) getSystemService(ALARM_SERVICE);
-        alarmMgr.setExact(alarmMgr.RTC, INTERVAL, pendingIntent);
+        alarmMgr.setExact(alarmMgr.RTC, System.currentTimeMillis() + INTERVAL, pendingIntent);
     }
 
     private void initServiceFunction() {
