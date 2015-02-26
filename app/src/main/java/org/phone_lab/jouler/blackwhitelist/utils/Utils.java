@@ -67,6 +67,11 @@ public class Utils {
     public static final String ADD_RATE_LIMIT = "Add rate limit";
     public static final String REMOVE_RATE_LIMIT = "Remove rate limit";
 
+    public static final String SET_PRIORITY_LOWEST = "Set priority to 19";
+    public static final String SET_PRIORITY_HIGHEST = "Set priority to -20";
+    public static final int LOWEST_PRIORITY = 19;
+    public static final int HIGHEST_PRIORITY = -20;
+
     public static final String RESET_EVERYTHING = "Reset everything";
 
     public static final String RESUME = "Jouler BlackWhiteList resume";

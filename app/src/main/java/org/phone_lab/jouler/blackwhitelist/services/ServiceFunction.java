@@ -1,19 +1,13 @@
 package org.phone_lab.jouler.blackwhitelist.services;
 
-import android.app.Service;
-import android.app.UiAutomation;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.BatteryManager;
 import android.os.Bundle;
-import android.os.DropBoxManager;
 import android.os.RemoteException;
-import android.provider.Settings;
-import android.speech.tts.UtteranceProgressListener;
 import android.util.Log;
-import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -29,7 +23,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,6 +39,7 @@ public class ServiceFunction {
     private HashMap<String, HashSet<String>> targetSetMap;
 
     private HashSet<Integer> rateLimitPackageSet;
+    private HashSet<Integer> resetPriorityPackageSet;
     private HashMap<Integer, Integer> priorityChangedPackageMap;
 
     private int globalPriority = 10;
@@ -78,22 +72,22 @@ public class ServiceFunction {
             }
             if (action.equals(Intent.ACTION_RESUME_ACTIVITY)) {
                 if (isTargetApp(packageName, Utils.BLACKLIST_TAB) || isTargetApp(packageName, Utils.NORMALLIST_TAB)) {
-                    if (rateLimitPackageSet.contains(uid)) {
+                    if (resetPriorityPackageSet.contains(uid)) {
                         try {
-                            Utils.log(Utils.REMOVE_RATE_LIMIT + " by RESUME: ", packageName);
-                            rateLimitPackageSet.remove(uid);
-                            service.iJoulerBaseService.delRateLimitRule(uid);
+                            Utils.log(Utils.SET_PRIORITY_HIGHEST + " by RESUME: ", packageName);
+                            resetPriorityPackageSet.remove(uid);
+                            service.iJoulerBaseService.resetPriority(uid, Utils.HIGHEST_PRIORITY);
                         } catch (RemoteException e) {
                             Utils.log(Utils.TAG, e.toString());
                             e.printStackTrace();
                         }
                     }
                 } else if (isTargetApp(packageName, Utils.WHITELIST_TAB)) {
-                    if (rateLimitPackageSet.contains(uid)) {
+                    if (resetPriorityPackageSet.contains(uid)) {
                         try {
-                            Utils.log(Utils.REMOVE_RATE_LIMIT, packageName);
-                            rateLimitPackageSet.remove(uid);
-                            service.iJoulerBaseService.delRateLimitRule(uid);
+                            Utils.log(Utils.SET_PRIORITY_HIGHEST, packageName);
+                            resetPriorityPackageSet.remove(uid);
+                            service.iJoulerBaseService.resetPriority(uid, Utils.HIGHEST_PRIORITY);
                         } catch (RemoteException e) {
                             Utils.log(Utils.TAG, e.toString());
                             e.printStackTrace();
@@ -102,11 +96,11 @@ public class ServiceFunction {
                 }
             } else if (action.equals(Intent.ACTION_PAUSE_ACTIVITY)) {
                 if (isTargetApp(packageName, Utils.BLACKLIST_TAB) || isTargetApp(packageName, Utils.NORMALLIST_TAB)) {
-                    if (!rateLimitPackageSet.contains(uid)) {
+                    if (!resetPriorityPackageSet.contains(uid)) {
                         try {
-                            Utils.log(Utils.ADD_RATE_LIMIT + " by Pause: ", packageName);
-                            rateLimitPackageSet.add(uid);
-                            service.iJoulerBaseService.addRateLimitRule(uid);
+                            Utils.log(Utils.SET_PRIORITY_LOWEST + " by Pause: ", packageName);
+                            resetPriorityPackageSet.add(uid);
+                            service.iJoulerBaseService.resetPriority(uid, Utils.LOWEST_PRIORITY);
                         } catch (RemoteException e) {
                             Utils.log(Utils.TAG, e.toString());
                             e.printStackTrace();
@@ -167,6 +161,7 @@ public class ServiceFunction {
         isBrightnessSet = false;
         batteryLevel = -1;
         rateLimitPackageSet = new HashSet<Integer>();
+        resetPriorityPackageSet = new HashSet<Integer>();
         priorityChangedPackageMap = new HashMap<Integer, Integer>();
         this.registerBunchReceiver();
     }
@@ -204,11 +199,11 @@ public class ServiceFunction {
             e.printStackTrace();
             return false;
         }
-        this.applyRateLimitForAll();
+        this.setPriorityToLowestForAll();
         return true;
     }
 
-    private void applyRateLimitForAll() {
+    private void setPriorityToLowestForAll() {
         try {
             String src = service.iJoulerBaseService.getStatistics();
             EnergyDetails energyDetails = new EnergyDetails(listMap, src);
@@ -217,10 +212,10 @@ public class ServiceFunction {
             JSONObject energyDetailJSONObject = energyDetails.getEnergyDetailJSONObject();
             JSONArray blackArray = (JSONArray) energyDetailJSONObject.get(Utils.BLACKLIST_TAB);
             JSONArray normalArray = (JSONArray) energyDetailJSONObject.get(Utils.NORMALLIST_TAB);
-            Utils.log("Apply RateLimit on black: ", blackArray.toString());
-            applyForAll(blackArray, Mechanism.ADD_RATE_LIMIT);
-            Utils.log("Apply RateLimit on normal: ", normalArray.toString());
-            applyForAll(normalArray, Mechanism.ADD_RATE_LIMIT);
+            Utils.log("set priority to lowest for black: ", blackArray.toString());
+            applyForAll(blackArray, Mechanism.RESET_PRIORITY);
+            Utils.log("set priority to lowest for normal: ", normalArray.toString());
+            applyForAll(normalArray, Mechanism.RESET_PRIORITY);
         } catch (RemoteException e) {
             Log.d(Utils.TAG, e.toString());
         } catch (JSONException e) {
@@ -536,11 +531,8 @@ public class ServiceFunction {
                 int uid = onePackage.getInt(Utils.JSON_Uid);
                 switch (mechanism) {
                     case RESET_PRIORITY:
-                        Integer originalPriority = priorityChangedPackageMap.get(uid);
-                        if (originalPriority == null) {
-                            priorityChangedPackageMap.put(uid, originalPriority);
-                        }
-                        service.iJoulerBaseService.resetPriority(uid, globalPriority);
+                        resetPriorityPackageSet.add(uid);
+                        service.iJoulerBaseService.resetPriority(uid, Utils.LOWEST_PRIORITY);
                         break;
                     case ADD_RATE_LIMIT:
                         rateLimitPackageSet.add(uid);
