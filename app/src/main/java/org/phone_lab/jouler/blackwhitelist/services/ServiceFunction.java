@@ -97,6 +97,7 @@ public class ServiceFunction {
                             Utils.log(Utils.CONTROL_MAX_CPU_FRE_LOW + " by RESUME: ", packageName);
                             cpuControlSet.add(uid);
                             service.iJoulerBaseService.controlCpuMaxFrequency(MAX_CPU_FREQUENCY_LOW);
+                            batteryLevelChanged();
                         } catch (RemoteException e) {
                             Utils.log(Utils.TAG, e.toString());
                             e.printStackTrace();
@@ -110,6 +111,7 @@ public class ServiceFunction {
                             Utils.log(Utils.CONTROL_MAX_CPU_FRE_HIGH + " by Pause: ", packageName);
                             cpuControlSet.remove(uid);
                             service.iJoulerBaseService.controlCpuMaxFrequency(MAX_CPU_FREQUENCY_HIGH);
+                            batteryLevelChanged();
                         } catch (RemoteException e) {
                             Utils.log(Utils.TAG, e.toString());
                             e.printStackTrace();
