@@ -83,6 +83,7 @@ public class ServiceFunction {
                             Utils.log(Utils.REMOVE_RATE_LIMIT + " by RESUME: ", packageName);
                             rateLimitPackageSet.remove(uid);
                             service.iJoulerBaseService.delRateLimitRule(uid);
+                            batteryLevelChanged();
                         } catch (RemoteException e) {
                             Utils.log(Utils.TAG, e.toString());
                             e.printStackTrace();
@@ -107,6 +108,7 @@ public class ServiceFunction {
                             Utils.log(Utils.ADD_RATE_LIMIT + " by Pause: ", packageName);
                             rateLimitPackageSet.add(uid);
                             service.iJoulerBaseService.addRateLimitRule(uid);
+                            batteryLevelChanged();
                         } catch (RemoteException e) {
                             Utils.log(Utils.TAG, e.toString());
                             e.printStackTrace();
