@@ -1,5 +1,7 @@
 package org.phone_lab.jouler.blackwhitelist.services;
 
+import android.content.Entity;
+import android.os.DropBoxManager;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -9,6 +11,8 @@ import org.phone_lab.jouler.blackwhitelist.utils.Utils;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by xcv58 on 2/23/15.
@@ -44,14 +48,28 @@ public class EnergyDetails {
             // TODO: statistics different app usage information.
             // TODO: and depend on this information to decide next action.
             JSONObject json = new JSONObject(jsonString);
-            Iterator<String> e = json.keys();
+            energyDetailJSONObject.put("BluetoothEnergy", json.getDouble("BluetoothEnergy"));
+            energyDetailJSONObject.put("CurrentBgDischargeRate", json.getDouble("CurrentBgDischargeRate"));
+            energyDetailJSONObject.put("CurrentDischargeRate", json.getDouble("CurrentDischargeRate"));
+            energyDetailJSONObject.put("CurrentFgDischargeRate", json.getDouble("CurrentFgDischargeRate"));
+            energyDetailJSONObject.put("IdleEnergy", json.getDouble("IdleEnergy"));
+            energyDetailJSONObject.put("PhoneEnergy", json.getDouble("PhoneEnergy"));
+            energyDetailJSONObject.put("RadioEnergy", json.getDouble("RadioEnergy"));
+            energyDetailJSONObject.put("ScreenEnergy", json.getDouble("ScreenEnergy"));
+            energyDetailJSONObject.put("TotalScreenOffTime", json.getDouble("TotalScreenOffTime"));
+            energyDetailJSONObject.put("TotalScreenOnTime", json.getDouble("TotalScreenOnTime"));
+            energyDetailJSONObject.put("Uptime", json.getDouble("Uptime"));
+            energyDetailJSONObject.put("WifiEnergy", json.getDouble("WifiEnergy"));
+
+            JSONObject packageDetails = (JSONObject) json.get("packageDetails");
+            Iterator<String> e = packageDetails.keys();
             while (e.hasNext()) {
                 String packageName = e.next();
                 String whichList = listMap.get(packageName);
                 if (whichList == null) {
                     whichList = Utils.UNKNOWN_TAB;
                 }
-                JSONObject packageEnergyDetail = json.getJSONObject(packageName);
+                JSONObject packageEnergyDetail = packageDetails.getJSONObject(packageName);
                 JSONArray jsonArray = (JSONArray) energyDetailJSONObject.get(whichList);
                 jsonArray.put(packageEnergyDetail);
 
@@ -62,6 +80,15 @@ public class EnergyDetails {
                 listEnergy.bgEnergy += Double.parseDouble(bgEnergy.toString());
 
 //                Log.d(Utils.TAG, "Package name: " + packageName + "; fgEnergy: " + fgEnergy + "; bgEnergy: " + bgEnergy);
+            }
+            for (Map.Entry<String, ListEnergy> entry : listPackageMap.entrySet()) {
+                String key = entry.getKey();
+                ListEnergy listEnergy = entry.getValue();
+                JSONObject jsonObject = new JSONObject();
+                jsonObject.put("bgEnergy", listEnergy.bgEnergy);
+                jsonObject.put("fgEnergy", listEnergy.fgEnergy);
+                jsonObject.put("totalEnergy", listEnergy.bgEnergy + listEnergy.fgEnergy);
+                energyDetailJSONObject.put(key + " TotalEnergy", jsonObject);
             }
             Utils.log(Utils.ENERGY_DETAILS, energyDetailJSONObject.toString());
         } catch (JSONException e) {
