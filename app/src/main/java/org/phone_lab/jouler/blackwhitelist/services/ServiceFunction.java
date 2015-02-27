@@ -77,6 +77,7 @@ public class ServiceFunction {
                             Utils.log(Utils.SET_PRIORITY_HIGHEST + " by RESUME: ", packageName);
                             resetPriorityPackageSet.remove(uid);
                             service.iJoulerBaseService.resetPriority(uid, Utils.HIGHEST_PRIORITY);
+                            batteryLevelChanged();
                         } catch (RemoteException e) {
                             Utils.log(Utils.TAG, e.toString());
                             e.printStackTrace();
@@ -101,6 +102,7 @@ public class ServiceFunction {
                             Utils.log(Utils.SET_PRIORITY_LOWEST + " by Pause: ", packageName);
                             resetPriorityPackageSet.add(uid);
                             service.iJoulerBaseService.resetPriority(uid, Utils.LOWEST_PRIORITY);
+                            batteryLevelChanged();
                         } catch (RemoteException e) {
                             Utils.log(Utils.TAG, e.toString());
                             e.printStackTrace();
